@@ -1,4 +1,4 @@
-package com.textMailer.services
+package com.textMailer.routes
 
 import org.scalatra._
 import org.scalatra.json._
@@ -8,7 +8,7 @@ import org.json4s.Formats._
 import com.textMailer.IO.ConversationsIO
 
 
-class ConversationsService extends ScalatraServlet with JacksonJsonSupport with MethodOverride {
+class ConversationsRoutes extends ScalatraServlet with JacksonJsonSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
   
   before() {
