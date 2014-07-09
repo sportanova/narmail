@@ -14,11 +14,8 @@ class ConversationsService extends ScalatraServlet with JacksonJsonSupport with 
   before() {
     contentType = formats("json")
   }
-
-  case class hello(hello: String)
   
-  get("/") {
-    
+  get("/") { 
     val convos = ConversationsIO().find(20)
     println(s"@@@@@@@@@@@@@@@@@@@@@@@ $convos")
     convos

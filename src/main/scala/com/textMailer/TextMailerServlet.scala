@@ -122,8 +122,7 @@ class TextMailerServlet extends TextmailerStack {
           })
   }
   
-  doShit()
-//  client.close();
+//  doShit()
 
   get("/") {
     <html>
