@@ -16,7 +16,7 @@ object ConversationsIO {
 
 class ConversationsIO(session: Session) {
   def find(limit: Int): List[Conversation] = {
-    val query = QueryBuilder.select().all().from("app","conversations").limit(limit)
+    val query = QueryBuilder.select().all().from("app","conversations_by_user").limit(limit)
     session.execute(query).all.asScala.toList.map(row => build(row))
   }
   

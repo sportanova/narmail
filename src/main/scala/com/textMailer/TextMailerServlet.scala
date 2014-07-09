@@ -40,7 +40,7 @@ class TextMailerServlet extends TextmailerStack {
 
     val store = session.getStore("imap")
     println(s"####### before connect")
-    store.connect("imap.googlemail.com","sportano@gmail.com", "ya29.NAAZJJtjqtkF6iAAAABjzKmHz67WWneRrqIqozN0FeNaWbKKgvC-i3KzbAT5Vg");
+    store.connect("imap.googlemail.com","sportano@gmail.com", "ya29.OADcpn6EkcaM7SAAAAA0Q-ZC3UXyWL3qKqiVGcaGLbnmMHX-4pyq_pyoD9Bm3g");
   println(s"####### before folder")
   val folder = store.getFolder("Inbox"); // This doesn't work for other email account
   println(s"####### before date")
@@ -55,10 +55,11 @@ class TextMailerServlet extends TextmailerStack {
           val messages = folder.search(olderThan)
           // folder.getMessages()
           var a = 0;
-          val uuid = UUIDs.timeBased
+          val userId = UUIDs.timeBased
 
           messages.map(m => {
             val textOpt = getText(m)
+            val emailId = UUIDs.timeBased
 
             val sender = m.getFrom() match {
               case null => "no_sender"
@@ -80,15 +81,15 @@ class TextMailerServlet extends TextmailerStack {
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase
             
             val statement = client.session.prepare(
-      "INSERT INTO app.inbox_emails " +
-      "(user_id, sender, subject, recipients_string, time, recipients, cc, bcc, body) " +
+      "INSERT INTO app.emails_by_conversation " +
+      "(id, user_id, subject, recipients_string, time, recipients, cc, bcc, body) " +
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
             
       val boundStatement = new BoundStatement(statement);
       
       client.session.execute(boundStatement.bind(
-      uuid.toString,
-      sender,
+      emailId.toString,
+      userId.toString,
       subject,
       "recipients_string",
       new Date().toString,
@@ -98,16 +99,16 @@ class TextMailerServlet extends TextmailerStack {
       text) );
       
       val statementConv = client.session.prepare(
-      "INSERT INTO app.conversations " +
-      "(user_id, sender, subject, recipients_string) " +
+      "INSERT INTO app.conversations_by_user " +
+      "(user_id, subject, recipients_string_hash, recipients_string) " +
       "VALUES (?, ?, ?, ?);");
             
       val boundStatementConv = new BoundStatement(statementConv);
       
       client.session.execute(boundStatementConv.bind(
-      uuid.toString,
-      sender,
+      userId.toString,
       subject,
+      "recipients_string_hash",
       "recipients_string"));
             
 //            val statement = s"INSERT INTO simplex.imported_emails (user_id, subject, recipients_string, time, recipients, cc, bcc, body) VALUES (uuid, subject, recipients_string, n, recipients, cc, bcc, text);"
@@ -121,7 +122,7 @@ class TextMailerServlet extends TextmailerStack {
           })
   }
   
-//  doShit()
+  doShit()
 //  client.close();
 
   get("/") {

@@ -26,10 +26,11 @@ class SimpleClient {
     session.execute("CREATE KEYSPACE IF NOT EXISTS app WITH replication " + 
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
     
+      // TODO: Add timestamp as value
     session.execute(
-	  "CREATE TABLE IF NOT EXISTS app.inbox_emails (" +
+	  "CREATE TABLE IF NOT EXISTS app.emails_by_conversation (" +
+	      "id text," +
 		  "user_id text," +
-		  "sender text," +
 		  "subject text," +
 		  "recipients_string text," +
 		  "time text," +
@@ -37,16 +38,16 @@ class SimpleClient {
 		  "cc text," +
 		  "bcc text," +
 		  "body text," +
-		  "PRIMARY KEY((user_id,sender,subject,recipients_string),time)" +
+		  "PRIMARY KEY((user_id, recipients_string, subject), time, id)" +
 		");")
 		
 	session.execute(
-      "CREATE TABLE IF NOT EXISTS app.conversations (" +
+      "CREATE TABLE IF NOT EXISTS app.conversations_by_user (" +
     	  "user_id text," +
-    	  "sender text," +
     	  "subject text," +
+    	  "recipients_string_hash text," +
     	  "recipients_string text," +
-    	  "PRIMARY KEY((user_id),sender,subject,recipients_string)" +
+    	  "PRIMARY KEY((user_id), recipients_string_hash, subject)" +
   	  ");")
   }
   
