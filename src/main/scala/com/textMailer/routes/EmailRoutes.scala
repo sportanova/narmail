@@ -5,10 +5,10 @@ import org.scalatra.json._
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.DefaultFormats._
 import org.json4s.Formats._
-import com.textMailer.IO.ConversationsIO
+import com.textMailer.IO.EmailIO
 
 
-class ConversationsRoutes extends ScalatraServlet with JacksonJsonSupport with MethodOverride {
+class EmailRoutes extends ScalatraServlet with JacksonJsonSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
   
   before() {
@@ -16,8 +16,8 @@ class ConversationsRoutes extends ScalatraServlet with JacksonJsonSupport with M
   }
   
   get("/") { 
-    val convos = ConversationsIO().find(20)
-    println(s"@@@@@@@@@@@@@@@@@@@@@@@ $convos")
-    convos
+    val emails = EmailIO().find(20)
+    println(s"@@@@@@@@@@@@@@@@@@@@@@@ $emails")
+    emails
   }
 }

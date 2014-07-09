@@ -7,6 +7,7 @@ class ScalatraBootstrap extends LifeCycle {
   override def init(context: ServletContext) {
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthServlet, "/oauth")
-    context.mount(new ConversationsRoutes, "/conversations")
+    context.mount(new ConversationRoutes, "/conversations")
+    context.mount(new EmailRoutes, "/emails")
   }
 }

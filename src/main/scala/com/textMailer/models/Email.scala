@@ -2,7 +2,7 @@ package com.textMailer.model
 
 import java.util.UUID
 
-case class Message (
+case class Email (
   id: String,
   user_id: String,
   subject: String,

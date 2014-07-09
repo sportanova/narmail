@@ -8,13 +8,13 @@ import com.datastax.driver.core.Row
 import com.textMailer.model.Conversation
 import scala.collection.JavaConverters._
 
-object ConversationsIO {
+object ConversationIO {
   val session = SimpleClient().getSession
-  private lazy val conversationsIO = new ConversationsIO(session)
-  def apply() = conversationsIO 
+  private lazy val conversationIO = new ConversationIO(session)
+  def apply() = conversationIO 
 }
 
-class ConversationsIO(session: Session) {
+class ConversationIO(session: Session) {
   def find(limit: Int): List[Conversation] = {
     val query = QueryBuilder.select().all().from("app","conversations_by_user").limit(limit)
     session.execute(query).all.asScala.toList.map(row => build(row))
