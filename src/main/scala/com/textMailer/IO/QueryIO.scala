@@ -11,11 +11,13 @@ import com.datastax.driver.core.Row
 import com.textMailer.models.Model
 
 trait QueryIO {
-  def curriedFind[T <: CassandraClause](clauses: List[T], limit: Int)(implicit table: String, build: Row => Model, session: Session): List[Model] = {
+  def curryFind[T <: CassandraClause, A <: Model](table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
     val query = QueryBuilder.select().all().from("app",table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)
     session.execute(query).all.asScala.toList.map(row => build(row))
   }
+  
+  val curryFindFn: String => (Row => Model) => Session => List[CassandraClause] => Int => List[Model] = curryFind _
   
   def addWhereClauses(query: Select, allClauses: List[CassandraClause]): Select = {
     allClauses match {

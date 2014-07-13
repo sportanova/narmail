@@ -7,22 +7,24 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
 import com.textMailer.models.Email
 import scala.collection.JavaConverters._
+import com.textMailer.models.Model
 
 object EmailIO {
-  implicit val session = SimpleClient().getSession
-  private lazy val emailIO = new EmailIO()
+  val session = SimpleClient().getSession
+  private lazy val emailIO = new EmailIO(session)
   def apply() = emailIO 
 }
 
-class EmailIO(implicit session: Session) extends QueryIO {
-  implicit val table = "emails_by_conversation"
+class EmailIO(session: Session) extends QueryIO {
+  val table = "emails_by_conversation"
 
-  def find(clauses: List[CassandraClause], limit: Int): List[Email] = {
-    curriedFind(clauses, limit)
-    List()
+  val curriedFind = curryFind(table)(build)(session) _
+
+  def find(clauses: List[CassandraClause], limit: Int): List[Email] = { 
+    curriedFind(clauses)(limit)
   }
   
-  implicit def build(row: Row): Email = {
+  def build(row: Row): Email = {
     val id = row.getString("user_id")
     val userId = row.getString("user_id")
     val subject = row.getString("subject")
