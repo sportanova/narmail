@@ -6,4 +6,4 @@ case class Conversation (
   user_id: String,
   subject: String,
   recipients: String
-)
+) extends Model

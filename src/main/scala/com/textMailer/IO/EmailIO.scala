@@ -9,18 +9,20 @@ import com.textMailer.models.Email
 import scala.collection.JavaConverters._
 
 object EmailIO {
-  val session = SimpleClient().getSession
-  private lazy val emailIO = new EmailIO(session)
+  implicit val session = SimpleClient().getSession
+  private lazy val emailIO = new EmailIO()
   def apply() = emailIO 
 }
 
-class EmailIO(session: Session) {
-  def find(limit: Int): List[Email] = {
-    val query = QueryBuilder.select().all().from("app","emails_by_conversation").limit(limit)
-    session.execute(query).all.asScala.toList.map(row => build(row))
+class EmailIO(implicit session: Session) extends QueryIO {
+  implicit val table = "emails_by_conversation"
+
+  def find(clauses: List[CassandraClause], limit: Int): List[Email] = {
+    curriedFind(clauses, limit)
+    List()
   }
   
-  def build(row: Row): Email = {
+  implicit def build(row: Row): Email = {
     val id = row.getString("user_id")
     val userId = row.getString("user_id")
     val subject = row.getString("subject")

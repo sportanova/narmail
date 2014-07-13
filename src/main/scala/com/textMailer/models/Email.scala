@@ -11,4 +11,4 @@ case class Email (
   cc: String,
   bcc: String,
   body: String
-)
+) extends Model
