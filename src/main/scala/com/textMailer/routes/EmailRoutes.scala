@@ -17,7 +17,8 @@ class EmailRoutes extends ScalatraServlet with JacksonJsonSupport with MethodOve
   
   get("/") { 
     val emails = EmailIO().find(20)
-    println(s"@@@@@@@@@@@@@@@@@@@@@@@ $emails")
+    val userId = params.getOrElse("userId", "no userId")
+    println(s"@@@@@@@@@ userId $userId")
     emails
   }
 }

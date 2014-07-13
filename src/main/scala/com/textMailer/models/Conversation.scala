@@ -1,4 +1,4 @@
-package com.textMailer.model
+package com.textMailer.models
 
 import java.util.UUID
 

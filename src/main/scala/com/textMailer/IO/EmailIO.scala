@@ -5,7 +5,7 @@ import java.util.UUID
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
-import com.textMailer.model.Email
+import com.textMailer.models.Email
 import scala.collection.JavaConverters._
 
 object EmailIO {

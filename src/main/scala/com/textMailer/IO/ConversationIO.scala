@@ -5,7 +5,7 @@ import java.util.UUID
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
-import com.textMailer.model.Conversation
+import com.textMailer.models.Conversation
 import scala.collection.JavaConverters._
 
 object ConversationIO {
