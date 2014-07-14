@@ -16,7 +16,6 @@ trait QueryIO {
     val queryWithClauses = addWhereClauses(query, clauses)
     session.execute(query).all.asScala.toList.map(row => build(row))
   }
-  
   val curryFindFn: String => (Row => Model) => Session => List[CassandraClause] => Int => List[Model] = curryFind _
   
   def addWhereClauses(query: Select, allClauses: List[CassandraClause]): Select = {
