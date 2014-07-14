@@ -14,7 +14,7 @@ import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import com.textMailer.IO.actors.EmailActor._
 
 
-class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with MethodOverride {
+class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
   protected implicit def executor: ExecutionContext = system.dispatcher
 
@@ -26,15 +26,8 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   }
   
   get("/") {
-//     new AsyncResult { val is = emailActor ? GetEmailsForConversation("","","") }
-    new AsyncResult { val is = emailActor ? "Do stuff and give me an answer" }
-//    val futureStuff = emailActor ? "Do stuff and give me an answer"
-//    for {
-//      stuff <- emailActor ? "Do stuff and give me an answer"
-//    } yield {
-//      println(s"@@@@@@@@@@ stuff $stuff")
-//      new AsyncResult {stuff}
-//    }
+    val emails = emailActor ? GetEmailsForConversation("","","")
+    new AsyncResult { val is = emails }
 //    val userId = params.getOrElse("userId", "no userId")
 //    val subject = params.getOrElse("subject", "no subject")
 //    val recipients = params.getOrElse("recipients", "recipients")
