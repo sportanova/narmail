@@ -1,4 +1,6 @@
-package specs.prepare
+package specs.prepare.IO
+
+import specs.prepare._
 
 import org.scalatra.test.specs2._
 
