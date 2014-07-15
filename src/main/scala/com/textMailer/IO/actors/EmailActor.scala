@@ -15,7 +15,7 @@ class EmailActor extends Actor {
       val emails = EmailIO().find(List(), 1)
       sender ! emails
     }
-    case "Do stuff and give me an answer" => sender ! "The answer is 42"
+    case _ => sender ! "Error: Didn't match case in EmailActor"
   }
 }
 

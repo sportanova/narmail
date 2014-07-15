@@ -22,13 +22,13 @@ class SimpleClient {
     session = cluster.connect()
   }
   
-  def createSchema(): Unit = {
-    session.execute("CREATE KEYSPACE IF NOT EXISTS app WITH replication " + 
+  def createSchema(keyspace: String): Unit = {
+    session.execute(s"CREATE KEYSPACE IF NOT EXISTS $keyspace WITH replication " + 
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
     
       // TODO: Add timestamp as value
     session.execute(
-	  "CREATE TABLE IF NOT EXISTS app.emails_by_conversation (" +
+	  s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
 	      "id text," +
 		  "user_id text," +
 		  "subject text," +
@@ -42,7 +42,7 @@ class SimpleClient {
 		");")
 		
 	session.execute(
-      "CREATE TABLE IF NOT EXISTS app.conversations_by_user (" +
+      s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
     	  "user_id text," +
     	  "subject text," +
     	  "recipients_string_hash text," +

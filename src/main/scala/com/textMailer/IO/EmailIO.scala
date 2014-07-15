@@ -20,7 +20,7 @@ class EmailIO(session: Session) extends QueryIO {
 
   val curriedFind = curryFind(table)(build)(session) _
 
-  def find(clauses: List[CassandraClause], limit: Int): List[Email] = { 
+  def find(clauses: List[CassandraClause], limit: Int): List[Email] = {
     curriedFind(clauses)(limit)
   }
   

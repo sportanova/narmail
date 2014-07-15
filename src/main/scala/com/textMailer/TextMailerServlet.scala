@@ -22,7 +22,7 @@ class TextMailerServlet extends TextmailerStack {
   val client = SimpleClient();
       client.connect("127.0.0.1");
       
-      client.createSchema();
+      client.createSchema("app");
 //      client.close();
   
   def doShit(): Unit = {
