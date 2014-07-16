@@ -8,11 +8,13 @@ import com.datastax.driver.core.Row
 import com.textMailer.models.Email
 import scala.collection.JavaConverters._
 import com.textMailer.models.Model
+import org.joda.time.DateTime
+import com.datastax.driver.core.ResultSet
 
 object EmailIO {
   val session = SimpleClient().getSession
   private lazy val emailIO = new EmailIO(session)
-  def apply() = emailIO 
+  def apply() = emailIO
 }
 
 class EmailIO(session: Session) extends QueryIO {
@@ -35,5 +37,30 @@ class EmailIO(session: Session) extends QueryIO {
     val body = row.getString("body")
     
     Email(id, userId, subject, recipients, time, cc, bcc, body)
+  }
+  
+  val preparedStatement = session.prepare(
+      "INSERT INTO app.emails_by_conversation " +
+      "(id, user_id, subject, recipients_string, time, recipients, cc, bcc, body) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
+  
+  val curriedWrite = curryWrite(session)(preparedStatement)(break) _
+
+  def write(email: Email): ResultSet = {
+    curriedWrite(email)
+  }
+  
+  def break(email: Email, boundStatement: BoundStatement): BoundStatement = {
+    boundStatement.bind(
+      email.id,
+      email.userId,
+      email.subject,
+      email.recipients.toString,
+      new DateTime().getMillis().toString,
+      email.recipients,
+      email.cc,
+      email.bcc,
+      email.body
+    )
   }
 }

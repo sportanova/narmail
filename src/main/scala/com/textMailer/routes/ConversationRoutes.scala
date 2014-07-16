@@ -16,7 +16,7 @@ class ConversationRoutes extends ScalatraServlet with JacksonJsonSupport with Me
   }
   
   get("/") { 
-    val convos = ConversationIO().find(20)
+    val convos = ConversationIO().find(List(), 20)
     println(s"@@@@@@@@@@@@@@@@@@@@@@@ $convos")
     convos
   }

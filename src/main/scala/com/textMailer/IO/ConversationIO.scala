@@ -7,6 +7,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
 import com.textMailer.models.Conversation
 import scala.collection.JavaConverters._
+import com.textMailer.models.Conversation
 
 object ConversationIO {
   val session = SimpleClient().getSession
@@ -14,10 +15,12 @@ object ConversationIO {
   def apply() = conversationIO 
 }
 
-class ConversationIO(session: Session) {
-  def find(limit: Int): List[Conversation] = {
-    val query = QueryBuilder.select().all().from("app","conversations_by_user").limit(limit)
-    session.execute(query).all.asScala.toList.map(row => build(row))
+class ConversationIO(session: Session) extends QueryIO {
+  val table = "conversations_by_user"
+  val curriedFind = curryFind(table)(build)(session) _
+
+  def find(clauses: List[CassandraClause], limit: Int): List[Conversation] = {
+    curriedFind(clauses)(limit)
   }
   
   def build(row: Row): Conversation = {

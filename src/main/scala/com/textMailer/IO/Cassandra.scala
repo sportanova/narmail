@@ -51,6 +51,10 @@ class SimpleClient {
   	  ");")
   }
   
+  def dropKeyspace(keyspace: String): Unit = {
+    session.execute(s"DROP KEYSPACE IF EXISTS $keyspace;")
+  }
+  
   def close() = {
     cluster.close
   }
