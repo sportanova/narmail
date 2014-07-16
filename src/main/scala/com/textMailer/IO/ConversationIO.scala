@@ -10,14 +10,17 @@ import scala.collection.JavaConverters._
 import com.textMailer.models.Conversation
 
 object ConversationIO {
-  val session = SimpleClient().getSession
-  private lazy val conversationIO = new ConversationIO(session)
+  val client = SimpleClient()
+  private lazy val conversationIO = new ConversationIO(client)
   def apply() = conversationIO 
 }
 
-class ConversationIO(session: Session) extends QueryIO {
+class ConversationIO(client: SimpleClient) extends QueryIO {
   val table = "conversations_by_user"
-  val curriedFind = curryFind(table)(build)(session) _
+  val session = client.getSession
+  val keyspace = client.getKeyspace
+
+  val curriedFind = curryFind(keyspace)(table)(build)(session) _
 
   def find(clauses: List[CassandraClause], limit: Int): List[Conversation] = {
     curriedFind(clauses)(limit)

@@ -22,7 +22,7 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   val session = client.getSession
   val keyspace = client.getKeyspace
 
-  val curriedFind = curryFind(table)(build)(session) _
+  val curriedFind = curryFind(keyspace)(table)(build)(session) _
 
   def find(clauses: List[CassandraClause], limit: Int): List[Email] = {
     curriedFind(clauses)(limit)
@@ -58,7 +58,7 @@ class EmailIO(client: SimpleClient) extends QueryIO {
       email.userId,
       email.subject,
       email.recipients.toString,
-      new DateTime().getMillis().toString,
+      email.time,
       email.recipients,
       email.cc,
       email.bcc,

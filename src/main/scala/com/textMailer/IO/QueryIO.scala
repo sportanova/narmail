@@ -14,8 +14,8 @@ import com.datastax.driver.core.ResultSet
 import com.datastax.driver.core.BoundStatement
 
 trait QueryIO {
-  def curryFind[T <: CassandraClause, A <: Model](table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
-    val query = QueryBuilder.select().all().from("app",table).limit(limit)
+  def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
+    val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)
     session.execute(query).all.asScala.toList.map(row => build(row))
   }
