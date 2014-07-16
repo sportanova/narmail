@@ -9,10 +9,10 @@ object SimpleClient {
 }
 
 
-class SimpleClient {
+class SimpleClient() {
   private var cluster: Cluster = null
-  var session: Session = null
-  
+
+  var session: Session = null  
   def getSession = session
 
   def connect(node: String): Unit = {
@@ -22,7 +22,13 @@ class SimpleClient {
     session = cluster.connect()
   }
   
-  def createSchema(keyspace: String): Unit = {
+  var keyspace: String = null
+  def getKeyspace = keyspace
+  def setKeyspace(newKeyspace: String) = {
+    keyspace = newKeyspace
+  }
+  
+  def createSchema(): Unit = {
     session.execute(s"CREATE KEYSPACE IF NOT EXISTS $keyspace WITH replication " + 
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
     

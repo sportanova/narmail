@@ -21,8 +21,8 @@ import javax.mail.internet.InternetAddress
 class TextMailerServlet extends TextmailerStack {
   val client = SimpleClient();
       client.connect("127.0.0.1");
-      
-      client.createSchema("app");
+      client.setKeyspace("app")
+      client.createSchema();
 //      client.close();
   
   def doShit(): Unit = {

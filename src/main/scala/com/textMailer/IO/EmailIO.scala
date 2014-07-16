@@ -12,13 +12,15 @@ import org.joda.time.DateTime
 import com.datastax.driver.core.ResultSet
 
 object EmailIO {
-  val session = SimpleClient().getSession
-  private lazy val emailIO = new EmailIO(session)
+  val client = SimpleClient()
+  private lazy val emailIO = new EmailIO(client)
   def apply() = emailIO
 }
 
-class EmailIO(session: Session) extends QueryIO {
+class EmailIO(client: SimpleClient) extends QueryIO {
   val table = "emails_by_conversation"
+  val session = client.getSession
+  val keyspace = client.getKeyspace
 
   val curriedFind = curryFind(table)(build)(session) _
 
@@ -40,7 +42,7 @@ class EmailIO(session: Session) extends QueryIO {
   }
   
   val preparedStatement = session.prepare(
-      "INSERT INTO app.emails_by_conversation " +
+      s"INSERT INTO $keyspace.emails_by_conversation " +
       "(id, user_id, subject, recipients_string, time, recipients, cc, bcc, body) " +
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
   

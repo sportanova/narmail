@@ -10,9 +10,10 @@ object PrepareData {
 class PrepareData() {
   val client = SimpleClient();
   client.connect("127.0.0.1");
+  client.setKeyspace("app_test")
 
   def CreateKeyspace() {
-    client.createSchema("app_test");
+    client.createSchema();
   }
   
   def DropKeyspace {
