@@ -8,6 +8,7 @@ import com.datastax.driver.core.Row
 import com.textMailer.models.Conversation
 import scala.collection.JavaConverters._
 import com.textMailer.models.Conversation
+import com.datastax.driver.core.ResultSet
 
 object ConversationIO {
   val client = SimpleClient()
@@ -32,5 +33,25 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
     val recipients = row.getString("recipients_string")
     
     Conversation(id, subject, recipients)
+  }
+  
+  val preparedStatement = session.prepare(
+      s"INSERT INTO $keyspace.conversations_by_user " +
+      "(user_id, subject, recipients_string_hash, recipients_string) " +
+      "VALUES (?, ?, ?, ?);");
+  
+  val curriedWrite = curryWrite(session)(preparedStatement)(break) _
+
+  def write(conversation: Conversation): ResultSet = {
+    curriedWrite(conversation)
+  }
+  
+  def break(conversation: Conversation, boundStatement: BoundStatement): BoundStatement = {
+    boundStatement.bind(
+      conversation.userId,
+      conversation.subject,
+      conversation.recipients.toString,
+      conversation.recipients.toString
+    )
   }
 }

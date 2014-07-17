@@ -12,20 +12,12 @@ class EmailIOSpec extends MutableScalatraSpec {
   prepare.CreateKeyspace
 
   "EmailIO.write" should {
-    "do stuff" in {
+    "write to the db" in {
       val email = Email("someId", "someUserId", "subject","recipients","time","cc","bcc","body")
       val writtenEmail = EmailIO().write(email)
-      println(s"######## writtenEmail $writtenEmail")
-      val findEmail = EmailIO().find(List(Eq("", "")), 10)
-      val x = 1
+      val foundEmails = EmailIO().find(List(Eq("user_id","someUserId"), Eq("recipients_string","recipients"), Eq("subject","subject")), 10)
+      println(s"######## foundEmails $foundEmails")
+      foundEmails.headOption.get.id === "someUserId"
     }
   }
-  
-  "find" should {
-    "do stuff" in {
-      val a = 1
-      a === 1
-    }
-  }
-  
 }
