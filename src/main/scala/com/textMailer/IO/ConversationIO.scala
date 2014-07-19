@@ -36,9 +36,9 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
   }
   
   val preparedStatement = session.prepare(
-      s"INSERT INTO $keyspace.conversations_by_user " +
-      "(user_id, subject, recipients_string_hash, recipients_string) " +
-      "VALUES (?, ?, ?, ?);");
+    s"INSERT INTO $keyspace.conversations_by_user " +
+    "(user_id, subject, recipients_string_hash, recipients_string) " +
+    "VALUES (?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 

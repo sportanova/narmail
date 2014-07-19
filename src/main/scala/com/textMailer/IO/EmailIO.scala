@@ -42,9 +42,9 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   }
   
   val preparedStatement = session.prepare(
-      s"INSERT INTO $keyspace.emails_by_conversation " +
-      "(id, user_id, subject, recipients_string, time, recipients, cc, bcc, body) " +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
+    s"INSERT INTO $keyspace.emails_by_conversation " +
+    "(id, user_id, subject, recipients_string, time, recipients, cc, bcc, body) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 

@@ -19,9 +19,9 @@ import java.net.URLEncoder
 
 class OAuthServlet extends TextmailerStack with MethodOverride {
   implicit val httpClient = new ApacheHttpClient
-  
-  //https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&redirect_uri=http://localhost:8080/oauth/oauth2callback&scope=https://mail.google.com/
-  
+
+  //https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&approval_prompt=force&access_type=offline&redirect_uri=http://localhost:8080/oauth/oauth2callback&scope=https://mail.google.com/
+  // refreshToken = 1/zfAy-hiQ7T3LQNww_HEe7z1M3L1aL27zZFdMszWfJlg
   def makeRequest(reqTok: String) = {
     var redirectURL = "http://localhost:8080/oauth/oauth2callback"
 	val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
@@ -33,7 +33,9 @@ class OAuthServlet extends TextmailerStack with MethodOverride {
   }
   
   
-  get("/success") {
+  put("/accessToken/:provider") {
+    val provider = params.getOrElse("provider", "no provider")
+    println(s"@@@@@@@@@@ provider $provider")
     "success"
   }
   
