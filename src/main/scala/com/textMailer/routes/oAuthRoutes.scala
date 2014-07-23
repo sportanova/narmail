@@ -11,6 +11,7 @@ import com.stackmob.newman.{ETagAwareHttpClient, ApacheHttpClient}
 import com.stackmob.newman._
 import com.stackmob.newman.caching.InMemoryHttpResponseCacher
 import com.stackmob.newman.dsl._
+import scala.util.Success
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,6 +29,7 @@ import com.textMailer.IO.Eq
 import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import com.textMailer.oAuth.tokens.AccessTokenActor._
+import scala.util.Failure
 
 //class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
 class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
@@ -38,10 +40,10 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
   protected implicit def executor: ExecutionContext = system.dispatcher
 //
   import _root_.akka.pattern.ask
-  implicit val defaultTimeout = Timeout(10)
+  implicit val defaultTimeout = Timeout(10000)
 
   //https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&access_type=offline&redirect_uri=http://localhost:8080/oauth/oauth2callback&scope=https://mail.google.com/
-  // refreshToken = 1/zfAy-hiQ7T3LQNww_HEe7z1M3L1aL27zZFdMszWfJlg
+  // refreshToken = 1/roJI5cuO89mcZgj1e3N67kAxmSA1IBf5KEYZM7voWOo
   def makeRequest(reqTok: String) = {
     var redirectURL = "http://localhost:8080/oauth/oauth2callback"
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
@@ -57,6 +59,7 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
     val provider = params.getOrElse("provider", "no provider")
     val userId = params.getOrElse("userId", "no userId")
     val refreshToken = accessTokenActor ? RefreshGmailAccessToken(userId)
+
     new AsyncResult { val is = refreshToken }
   }
   

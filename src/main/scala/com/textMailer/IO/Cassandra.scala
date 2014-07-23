@@ -32,6 +32,8 @@ class SimpleClient() {
     session.execute(s"CREATE KEYSPACE IF NOT EXISTS $keyspace WITH replication " + 
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
       
+      // need email accounts table
+      
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.users (" +
         "id text PRIMARY KEY," +
