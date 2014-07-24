@@ -24,7 +24,8 @@ class OAuthRoutesSpec extends MutableScalatraSpec {
       val writtenUser = UserIO().write(user)
       put(s"/accessToken/gmail/${user.id}") {
         status must_== 200
-        println(s"@@@@@@@@@@@@@ response ${response.body}")
+        val res = response.body
+        res !== "Failed to refresh AccessToken"
       }
     }
   }

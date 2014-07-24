@@ -31,10 +31,13 @@ class AccessTokenActor extends Actor {
 
   def receive = {
     case RefreshGmailAccessToken(userId) => {
-      val accessToken = for {
+      val accessToken = (for {
         u <- UserIO().find(List(Eq("id",userId)), 1).headOption
         token <- refreshAccessToken(u.refreshToken)
-      } yield(token)
+      } yield(token)) match {
+        case Some(at) => at
+        case None => "Failed to refresh AccessToken"
+      }
 
       sender ! accessToken
     }
