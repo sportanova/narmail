@@ -9,12 +9,13 @@ import com.textMailer.oAuth.tokens.AccessTokenActor
 class ScalatraBootstrap extends LifeCycle {
   val system = ActorSystem()
   val emailActor = system.actorOf(Props[EmailActor])
+  val conversationActor = system.actorOf(Props[ConversationActor])
   val accessTokenActor = system.actorOf(Props[AccessTokenActor])
 
   override def init(context: ServletContext) {
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")
-    context.mount(new ConversationRoutes, "/conversations")
+    context.mount(new ConversationRoutes(system, conversationActor), "/conversations")
     context.mount(new EmailRoutes(system, emailActor), "/emails")
   }
   
