@@ -48,10 +48,10 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
     var redirectURL = "http://localhost:8080/oauth/oauth2callback"
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(redirectURL, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
-    val res1 = Await.result(req.apply, 10.second)
-    val json1 = res1.toJson()
-	  println(s"<<<<<<<< res ${res1.bodyString}")
-	  println(s"<<<<<<<< json ${json1}") 
+    val res = Await.result(req.apply, 10.second)
+    val json = res.toJson()
+	  println(s"<<<<<<<< res ${res.bodyString}")
+	  println(s"<<<<<<<< json ${json}") 
   }
   
   // instead check for user's email accounts, and update accounts?
