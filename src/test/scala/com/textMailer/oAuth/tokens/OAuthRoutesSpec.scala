@@ -15,8 +15,8 @@ class OAuthRoutesSpec extends MutableScalatraSpec {
   val accessTokenActor = system.actorOf(Props[AccessTokenActor])
   addServlet(new OAuthRoutes(system, accessTokenActor), "/*")
 
-  prepare.DropKeyspace
-  prepare.CreateKeyspace
+  prepare.DropTables
+  prepare.CreateTables
 
   "The refresh token" should {
     "be used to get a new access token for Gmail" in {

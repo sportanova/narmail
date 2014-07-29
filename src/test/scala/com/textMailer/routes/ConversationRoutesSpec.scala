@@ -17,8 +17,8 @@ class ConversationRoutesSpec extends MutableScalatraSpec {
   val conversationActor = system.actorOf(Props[ConversationActor])
   addServlet(new ConversationRoutes(system, conversationActor), "/*")
 
-  prepare.DropKeyspace
-  prepare.CreateKeyspace
+  prepare.DropTables
+  prepare.CreateTables
 
   " get /conversation" should {
     "get conversations for a user" in {

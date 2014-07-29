@@ -33,7 +33,14 @@ class SimpleClient() {
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
       
       // need email accounts table
-      
+      createTables()
+  }
+  
+  def dropTable(table: String): Unit = {
+    session.execute(s"DROP TABLE IF EXISTS $keyspace.$table")
+  }
+  
+  def createTables(): Unit = {
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.users (" +
         "id text PRIMARY KEY," +
@@ -47,21 +54,21 @@ class SimpleClient() {
     
       // TODO: Add timestamp as value
     session.execute(
-	  s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
-	    "id text," +
-		  "user_id text," +
-		  "subject text," +
-		  "recipients_string text," +
-		  "time text," +
-		  "recipients text," +
-		  "cc text," +
-		  "bcc text," +
-		  "body text," +
-		  "PRIMARY KEY((user_id, recipients_string, subject), time, id)" +
-		");")
-		
-		// emails by user index table?
-		session.execute(
+    s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
+      "id text," +
+      "user_id text," +
+      "subject text," +
+      "recipients_string text," +
+      "time text," +
+      "recipients text," +
+      "cc text," +
+      "bcc text," +
+      "body text," +
+      "PRIMARY KEY((user_id, recipients_string, subject), time, id)" +
+    ");")
+    
+    // emails by user index table?
+    session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.new_emails_index (" +
       "user_id text," +
       "time text," +
@@ -72,15 +79,15 @@ class SimpleClient() {
 
 
 
-		// add timestamp to primary key
-		session.execute(
+    // add timestamp to primary key
+    session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
-    	  "user_id text," +
-    	  "subject text," +
-    	  "recipients_string_hash text," +
-    	  "recipients_string text," +
-    	  "PRIMARY KEY((user_id), recipients_string_hash, subject)" +
-  	  ");")
+        "user_id text," +
+        "subject text," +
+        "recipients_string_hash text," +
+        "recipients_string text," +
+        "PRIMARY KEY((user_id), recipients_string_hash, subject)" +
+      ");")
   }
   
   def dropKeyspace(keyspace: String): Unit = {

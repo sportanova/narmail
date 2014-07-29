@@ -8,8 +8,8 @@ import com.textMailer.IO.Eq
 
 class ConversationIOSpec extends MutableScalatraSpec {
   val prepare = PrepareData()
-  prepare.DropKeyspace
-  prepare.CreateKeyspace
+  prepare.DropTables
+  prepare.CreateTables
 
   "EmailIO.write" should {
     "write to the db" in {

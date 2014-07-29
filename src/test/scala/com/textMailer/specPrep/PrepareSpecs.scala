@@ -16,11 +16,14 @@ class PrepareData() {
   val system = ActorSystem()
   def getSystem = system
 
-  def CreateKeyspace() {
-    client.createSchema();
+  def CreateTables() {
+    client.createSchema()
   }
   
-  def DropKeyspace {
-    client.dropKeyspace("app_test")
+  def DropTables {
+    client.dropTable("users")
+    client.dropTable("emails_by_conversation")
+    client.dropTable("conversations_by_user")
+    client.dropTable("new_emails_index")
   }
 }
