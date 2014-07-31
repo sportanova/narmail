@@ -31,8 +31,7 @@ class SimpleClient() {
   def createSchema(): Unit = {
     session.execute(s"CREATE KEYSPACE IF NOT EXISTS $keyspace WITH replication " + 
       "= {'class':'SimpleStrategy', 'replication_factor':3};")
-      
-      // need email accounts table
+
       createTables()
   }
   
@@ -51,6 +50,8 @@ class SimpleClient() {
         "refresh_token text," +
         "password text," +
       ");")
+      
+      // need email accounts table
     
       // TODO: Add timestamp as value
     session.execute(
