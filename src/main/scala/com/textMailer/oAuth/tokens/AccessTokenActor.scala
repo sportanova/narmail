@@ -32,24 +32,24 @@ class AccessTokenActor extends Actor {
 
   def receive = {
     case GetGmailAccessToken(accessCode) => {
-      val result = accessCode match {
-        case Some(ac) => {
-//          val resultMap = getGmailAccessToken(ac)
-//          val accessToken = resultMap.get("accessToken") match {
-          val map = Map("x" -> "ya29.UwAAygocetL_vxwAAACcODG3O_apOeGMfmN191pzzChHC-Q2wMUNuhIv6iT9VQ")
-          val accessToken = map.get("x") match {
-            case Some(at) => {
-              println(s"@@@@@@@@@@@ at $at")
-              val xxx = getGmailAddress(at)
-              xxx
-            }
-            case None => None
-          }
+      val userInfo = for {
+        ac <- accessCode
+        tokens <- getGmailAccessToken(ac)
+        at <- tokens.get("accessToken")
+        rt <- tokens.get("refreshToken")
+        email <- getGmailAddress(at)
+      } yield (Map("accessToken" -> at, "email" -> email, "refreshToken" -> rt))
+      println(s"@@@@@@@@@@@@@@ userInfo $userInfo")
+      userInfo match {
+        case Some(ui) => {
+          
         }
-        case None => None
+        case None =>
       }
       
-      sender ! result
+      // create new user + account OR new account for user
+      
+      sender ! "wat"
     }
     case RefreshGmailAccessToken(userId) => {
       val accessToken = (for {
@@ -81,40 +81,31 @@ class AccessTokenActor extends Actor {
     }
   }
   
-  def getGmailAccessToken(reqTok: String): Option[Map[String,Option[String]]] = {
+  def getGmailAccessToken(reqTok: String): Option[Map[String,String]] = {
     val redirectURL = "http://localhost:8080/oauth/oauth2callback"
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(redirectURL, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
     val json = Await.result(req.apply, 10.second).toJValue
-    json.values.asInstanceOf[Map[String,Any]].get("body") match {
-      case Some(js) => {
-        val innerJSON = JsonParser.parse(js.toString).values.asInstanceOf[Map[String,String]]
-        val accessToken = innerJSON.get("access_token")
-        val refreshToken = innerJSON.get("refresh_token")
-        
-        Some(Map("accessToken" -> accessToken, "refreshToken" -> refreshToken))
-      }
-      case None => None
-    }
+
+    for {
+      body <- json.values.asInstanceOf[Map[String,Any]].get("body")
+      innerJSON <- Some(JsonParser.parse(body.toString).values.asInstanceOf[Map[String,String]])
+      at <- innerJSON.get("access_token")
+                      // TODO: make option again
+//          rt <- innerJSON.get("refresh_token")
+      rt <- Some("watRefreshToken")
+    } yield(Map("accessToken" -> at, "refreshToken" -> rt))
   }
   
   def getGmailAddress(accessToken: String): Option[String] = {
     val url = new URL("https://www.googleapis.com/userinfo/email?alt=json")
     val req = GET(url).addHeaders(("authorization", s"Bearer $accessToken"))
     val res = Await.result(req.apply, 10.second).toJValue
-    val body = res.values.asInstanceOf[Map[String,Any]].get("body") match {
-      case Some(js) => {
-        val data = JsonParser.parse(js.toString).values.asInstanceOf[Map[String,Any]].get("data") match {
-          case Some(d) => {
-            val email = d.asInstanceOf[Map[String,String]].get("email")
-            println(s"@@@@@@@@@@@@@@@@@@ xxx $email")
-          }
-          case None => None
-        }
-        data
-      }
-      case None => None
-    }
-    None
+
+    for {
+      body <- res.values.asInstanceOf[Map[String,Any]].get("body")
+      data <- JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]].get("data")
+      email <- data.asInstanceOf[Map[String,String]].get("email")
+    } yield(email)
   }
 }

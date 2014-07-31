@@ -25,5 +25,6 @@ class PrepareData() {
     client.dropTable("emails_by_conversation")
     client.dropTable("conversations_by_user")
     client.dropTable("new_emails_index")
+    client.dropTable("index_1")
   }
 }

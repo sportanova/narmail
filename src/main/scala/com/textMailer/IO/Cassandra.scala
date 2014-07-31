@@ -68,7 +68,6 @@ class SimpleClient() {
       "PRIMARY KEY((user_id, recipients_string, subject), time, id)" +
     ");")
     
-    // emails by user index table?
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.new_emails_index (" +
       "user_id text," +
@@ -77,8 +76,12 @@ class SimpleClient() {
       "subject text," +
       "PRIMARY KEY(user_id, time)" +
     ");")
-
-
+    
+    session.execute(
+    s"CREATE TABLE IF NOT EXISTS $keyspace.index_1 (" +
+      "indexed_value_1 text PRIMARY KEY," +
+      "data map<text,text>" +
+    ");")
 
     // add timestamp to primary key
     session.execute(
