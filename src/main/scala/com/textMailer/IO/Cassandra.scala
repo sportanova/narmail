@@ -88,6 +88,7 @@ class SimpleClient() {
       "user_id text," +
       "id text," +
       "provider text," +
+      "username text," +
       "access_token text," +
       "refresh_token text," +
       "PRIMARY KEY(user_id, provider, id));")

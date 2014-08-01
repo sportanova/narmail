@@ -5,11 +5,9 @@ import java.util.UUID
 import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
-import com.textMailer.models.Conversation
 import scala.collection.JavaConverters._
-import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
-import com.textMailer.models.EmailAccount
+import com.textMailer.models._
 import collection.JavaConversions._
 
 object EmailAccountIO {
@@ -33,28 +31,36 @@ class EmailAccountIO(client: SimpleClient) extends QueryIO {
     val userId = row.getString("user_id")
     val id = row.getString("id")
     val provider = row.getString("provider")
+    val username = row.getString("username")
     val accessToken = row.getString("access_token")
     val refreshToken = row.getString("refresh_token")
 
-    EmailAccount(id, userId, provider, accessToken, refreshToken)
+    EmailAccount(userId, id, provider, username, accessToken, refreshToken)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(user_id, id, provider, access_token, refresh_token) " +
-    "VALUES (?, ?, ?, ?, ?);");
+    "(user_id, id, provider, username, access_token, refresh_token) " +
+    "VALUES (?, ?, ?, ?, ?, ?);");
+  
+  def prepareWrite(emailAccount: EmailAccount): Unit = {
+    val accountIndex = Index1(emailAccount.username, Map("provider" -> emailAccount.provider, "id" -> emailAccount.id, "userId" -> emailAccount.userId))
+    Index1IO().write(accountIndex)
+  }
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(index1: EmailAccount): ResultSet = {
-    curriedWrite(index1)
+  def write(emailAccount: EmailAccount): ResultSet = {
+    prepareWrite(emailAccount)
+    curriedWrite(emailAccount)
   }
 
   def break(emailAccount: EmailAccount, boundStatement: BoundStatement): BoundStatement = {
     boundStatement.bind(
-      emailAccount.id,
       emailAccount.userId,
+      emailAccount.id,
       emailAccount.provider,
+      emailAccount.username,
       emailAccount.accessToken,
       emailAccount.refreshToken
     )
