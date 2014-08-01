@@ -10,6 +10,7 @@ import scala.collection.JavaConverters._
 import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import com.textMailer.models.User
+import scala.util.Try
 
 object UserIO {
   val client = SimpleClient()
@@ -47,7 +48,7 @@ class UserIO(client: SimpleClient) extends QueryIO {
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(user: User): ResultSet = {
+  def write(user: User): Try[User] = {
     curriedWrite(user)
   }
   

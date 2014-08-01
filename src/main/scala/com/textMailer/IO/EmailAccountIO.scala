@@ -9,6 +9,7 @@ import scala.collection.JavaConverters._
 import com.datastax.driver.core.ResultSet
 import com.textMailer.models._
 import collection.JavaConversions._
+import scala.util.Try
 
 object EmailAccountIO {
   val client = SimpleClient()
@@ -44,14 +45,11 @@ class EmailAccountIO(client: SimpleClient) extends QueryIO {
     "VALUES (?, ?, ?, ?, ?, ?);");
   
   def prepareWrite(emailAccount: EmailAccount): Unit = {
-    val accountIndex = Index1(emailAccount.username, Map("provider" -> emailAccount.provider, "id" -> emailAccount.id, "userId" -> emailAccount.userId))
-    Index1IO().write(accountIndex)
   }
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(emailAccount: EmailAccount): ResultSet = {
-    prepareWrite(emailAccount)
+  def write(emailAccount: EmailAccount): Try[EmailAccount] = {
     curriedWrite(emailAccount)
   }
 

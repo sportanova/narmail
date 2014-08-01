@@ -11,6 +11,7 @@ import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import com.textMailer.models.Index1
 import collection.JavaConversions._
+import scala.util.Try
 
 object Index1IO {
   val client = SimpleClient()
@@ -44,7 +45,7 @@ class Index1IO(client: SimpleClient) extends QueryIO {
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(index1: Index1): ResultSet = {
+  def write(index1: Index1): Try[Index1] = {
     curriedWrite(index1)
   }
   

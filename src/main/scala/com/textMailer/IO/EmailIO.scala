@@ -10,6 +10,7 @@ import scala.collection.JavaConverters._
 import com.textMailer.models.Model
 import org.joda.time.DateTime
 import com.datastax.driver.core.ResultSet
+import scala.util.Try
 
 object EmailIO {
   val client = SimpleClient()
@@ -48,7 +49,7 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(email: Email): ResultSet = {
+  def write(email: Email): Try[Email] = {
     curriedWrite(email)
   }
   

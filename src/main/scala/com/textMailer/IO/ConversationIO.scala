@@ -9,6 +9,7 @@ import com.textMailer.models.Conversation
 import scala.collection.JavaConverters._
 import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
+import scala.util.Try
 
 object ConversationIO {
   val client = SimpleClient()
@@ -42,7 +43,7 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(conversation: Conversation): ResultSet = {
+  def write(conversation: Conversation): Try[Conversation] = {
     curriedWrite(conversation)
   }
   

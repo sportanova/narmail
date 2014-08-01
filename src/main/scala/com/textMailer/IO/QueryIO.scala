@@ -12,6 +12,9 @@ import com.textMailer.models.Model
 import com.datastax.driver.core.PreparedStatement
 import com.datastax.driver.core.ResultSet
 import com.datastax.driver.core.BoundStatement
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 trait QueryIO {
   def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
@@ -30,9 +33,12 @@ trait QueryIO {
     }
   }
   
-  def curryWrite[A <: Model](session: Session)(preparedStatement: PreparedStatement)(break: (A,BoundStatement) => BoundStatement)(model: A): ResultSet = {
+  def curryWrite[A <: Model](session: Session)(preparedStatement: PreparedStatement)(break: (A,BoundStatement) => BoundStatement)(model: A): Try[A] = {
     val unboundBoundStatement = new BoundStatement(preparedStatement);
     val boundStatement = break(model, unboundBoundStatement)
-    session.execute(boundStatement)
+    Try(session.execute(boundStatement)) match {
+      case Success(s) => Success(model)
+      case Failure(ex) => Failure(ex)
+    }
   }
 }
