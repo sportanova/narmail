@@ -19,10 +19,13 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.JsonAST.JString
 import net.liftweb.json.JsonAST.JObject
 import net.liftweb.json.JsonParser
+import com.datastax.driver.core.utils.UUIDs
+import com.textMailer.models.EmailAccount
+import com.textMailer.IO.EmailAccountIO
 
 object AccessTokenActor {
   case class RefreshGmailAccessToken(userId: String)
-  case class GetGmailAccessToken(accessCode: Option[String])  
+  case class AddGmailAccount(userId: Option[String], accessCode: Option[String])  
 }
 
 class AccessTokenActor extends Actor {
@@ -31,22 +34,23 @@ class AccessTokenActor extends Actor {
   
 
   def receive = {
-    case GetGmailAccessToken(accessCode) => {
-      val userInfo = for {
+    case AddGmailAccount(userId, accessCode) => {
+      (for {
+        id <- userId
         ac <- accessCode
         tokens <- getGmailAccessToken(ac)
         at <- tokens.get("accessToken")
         rt <- tokens.get("refreshToken")
         email <- getGmailAddress(at)
-      } yield (Map("accessToken" -> at, "email" -> email, "refreshToken" -> rt))
-      println(s"@@@@@@@@@@@@@@ userInfo $userInfo")
-      userInfo match {
-        case Some(ui) => {
-          
+      } yield (Map("userId" -> id, "accessToken" -> at, "email" -> email, "refreshToken" -> rt))) match {
+        case Some(userInfo) => {
+          // TODO: Actually test this
+          EmailAccountIO().write(EmailAccount(userInfo.get("userId").get, UUIDs.random().toString, "gmail", userInfo.get("email").get, userInfo.get("accessToken").get, userInfo.get("refreshToken").get))
         }
         case None =>
       }
       
+      // look up 
       // create new user + account OR new account for user
       
       sender ! "wat"
