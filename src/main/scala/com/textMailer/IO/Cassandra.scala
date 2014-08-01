@@ -82,6 +82,15 @@ class SimpleClient() {
       "indexed_value_1 text PRIMARY KEY," +
       "data map<text,text>" +
     ");")
+    
+    session.execute(
+      s"CREATE TABLE IF NOT EXISTS $keyspace.email_accounts (" +
+      "user_id text," +
+      "id text," +
+      "provider text," +
+      "access_token text," +
+      "refresh_token text," +
+      "PRIMARY KEY(user_id, provider, id));")
 
     // add timestamp to primary key
     session.execute(
