@@ -45,7 +45,7 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
   put("/accessToken/:provider/:userId") {
     val provider = params.getOrElse("provider", "no provider")
     val userId = params.getOrElse("userId", "no userId")
-    val refreshToken = accessTokenActor ? RefreshGmailAccessToken(userId)
+    val refreshToken = accessTokenActor ? RefreshGmailAccessTokens(userId)
 
     new AsyncResult { val is = refreshToken }
   }

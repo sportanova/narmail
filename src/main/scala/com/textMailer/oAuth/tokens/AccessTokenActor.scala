@@ -22,9 +22,12 @@ import net.liftweb.json.JsonParser
 import com.datastax.driver.core.utils.UUIDs
 import com.textMailer.models.EmailAccount
 import com.textMailer.IO.EmailAccountIO
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 object AccessTokenActor {
-  case class RefreshGmailAccessToken(userId: String)
+  case class RefreshGmailAccessTokens(userId: String)
   case class AddGmailAccount(userId: Option[String], accessCode: Option[String])  
 }
 
@@ -47,7 +50,7 @@ class AccessTokenActor extends Actor {
           // TODO: Actually test this
           EmailAccountIO().write(EmailAccount(userInfo.get("userId").get, UUIDs.random().toString, "gmail", userInfo.get("email").get, userInfo.get("accessToken").get, userInfo.get("refreshToken").get))
         }
-        case None =>
+        case None => 
       }
       
       // look up 
@@ -55,16 +58,13 @@ class AccessTokenActor extends Actor {
       
       sender ! "wat"
     }
-    case RefreshGmailAccessToken(userId) => {
-      val accessToken = (for {
-        u <- UserIO().find(List(Eq("id",userId)), 1).headOption
-        token <- refreshGmailAccessToken(u.refreshToken)
-      } yield(token)) match {
-        case Some(at) => at
-        case None => "Failed to refresh AccessToken"
-      }
-
-      sender ! accessToken
+    case RefreshGmailAccessTokens(userId) => {
+      val accessTokens = (for {
+        ea <- EmailAccountIO().find(List(Eq("id",userId), Eq("provider", "gmail")), 10)
+        token <- refreshGmailAccessToken(ea.refreshToken)
+      } yield(token))
+// TODO: actually test this
+      sender ! accessTokens
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
@@ -74,8 +74,11 @@ class AccessTokenActor extends Actor {
     val req = POST(refreshURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded"))
       .addBody(s"client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=refresh_token&refresh_token=$refreshToken")
 
-    val json = Await.result(req.apply, 10.second).toJValue
-    getAccessTokenFromJson(json)
+    val json = Try{Await.result(req.apply, 10.second).toJValue}
+    json match {
+      case Success(s) => getAccessTokenFromJson(s)
+      case Failure(ex) => None
+    }
   }
   
   def getAccessTokenFromJson(json: JValue): Option[String] = {

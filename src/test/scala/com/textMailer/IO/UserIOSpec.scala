@@ -11,7 +11,7 @@ class UserIOSpec extends MutableScalatraSpec {
 
   "UserIO.write" should {
     "write to the db" in {
-      val user = User("someId", "sportano@gmail.com", "Stephen", "Portanova","accessafasdfasdfasdf","refreshsadfsadffds","PASSWORD")
+      val user = User("someId", "Stephen", "Portanova","PASSWORD")
       val writtenUser = UserIO().write(user)
       val foundUsers = UserIO().find(List(Eq("id","someId")), 10)
       foundUsers.headOption.get.id === "someId"

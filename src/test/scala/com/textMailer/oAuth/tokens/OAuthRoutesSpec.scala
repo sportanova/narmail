@@ -20,7 +20,7 @@ class OAuthRoutesSpec extends MutableScalatraSpec {
 
   "The refresh token" should {
     "be used to get a new access token for Gmail" in {
-      val user = User("someId", "sportano@gmail.com", "Stephen", "Portanova","accessafasdfasdfasdf","1/roJI5cuO89mcZgj1e3N67kAxmSA1IBf5KEYZM7voWOo","PASSWORD")
+      val user = User("someId", "Stephen", "Portanova","PASSWORD")
       val writtenUser = UserIO().write(user)
       put(s"/accessToken/gmail/${user.id}") {
         status must_== 200

@@ -11,6 +11,8 @@ import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import com.textMailer.models.User
 import scala.util.Try
+import com.datastax.driver.core.utils.UUIDs
+import com.datastax.driver.core.utils.UUIDs
 
 object UserIO {
   val client = SimpleClient()
@@ -31,20 +33,17 @@ class UserIO(client: SimpleClient) extends QueryIO {
   
   def build(row: Row): User = {
     val id = row.getString("id")
-    val emails = row.getString("emails")
     val firstName = row.getString("first_name")
     val lastName = row.getString("last_name")
-    val accessToken = row.getString("access_token")
-    val refreshToken = row.getString("refresh_token")
     val password = row.getString("password")
     
-    User(id, emails, firstName, lastName, accessToken, refreshToken, password)
+    User(id, firstName, lastName, password)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.users " +
-    "(id, emails, first_name, last_name, access_token, refresh_token, password) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?);");
+    "(id, first_name, last_name, password) " +
+    "VALUES (?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -52,14 +51,18 @@ class UserIO(client: SimpleClient) extends QueryIO {
     curriedWrite(user)
   }
   
+  def createUserIfNotExists(userInfo: Map[String,String]) = {
+    this.find(List(Eq("id", userInfo.get("userId").get)), 1).headOption match {
+      case Some(u) => None
+      case None => this.write(User(UUIDs.random().toString, "", "", ""))
+    }
+  }
+  
   def break(user: User, boundStatement: BoundStatement): BoundStatement = {
     boundStatement.bind(
       user.id,
-      user.emails,
       user.firstName,
       user.lastName,
-      user.accessToken,
-      user.refreshToken,
       user.password
     )
   }
