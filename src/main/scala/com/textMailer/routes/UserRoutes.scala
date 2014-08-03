@@ -28,31 +28,17 @@ import com.textMailer.IO.EmailIO
 import com.textMailer.IO.Eq
 import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
-import com.textMailer.oAuth.tokens.AccessTokenActor._
 import scala.util.Failure
+import com.textMailer.IO.actors.UserActor.CreateUser
 
-class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
+class UserRoutes (system: ActorSystem, userActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
   protected implicit def executor: ExecutionContext = system.dispatcher
-
   import _root_.akka.pattern.ask
   implicit val defaultTimeout = Timeout(10000)
-  // TODO: userId in redirectURI???
-  // https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&access_type=offline&redirect_uri=http://localhost:8080/oauth/oauth2callback&state=stephenUserId&scope=https://mail.google.com/ email
-  // refreshToken = 1/roJI5cuO89mcZgj1e3N67kAxmSA1IBf5KEYZM7voWOo
 
-  put("/accessToken/:provider/:userId") {
-    val provider = params.getOrElse("provider", "no provider")
-    val userId = params.getOrElse("userId", "no userId")
-    val refreshToken = accessTokenActor ? RefreshGmailAccessTokens(userId)
-
-    new AsyncResult { val is = refreshToken }
-  }
-  
-  get("/oauth2callback") {
-    val userId = params.get("state")
-    val accessCode = params.get("code")
-    val newUser = accessTokenActor ? AddGmailAccount(userId, accessCode)
+  post("/") {
+    val newUser = userActor ? CreateUser()
     new AsyncResult { val is = newUser }
   }
 }

@@ -51,13 +51,6 @@ class UserIO(client: SimpleClient) extends QueryIO {
     curriedWrite(user)
   }
   
-  def createUserIfNotExists(userInfo: Map[String,String]) = {
-    this.find(List(Eq("id", userInfo.get("userId").get)), 1).headOption match {
-      case Some(u) => None
-      case None => this.write(User(UUIDs.random().toString, "", "", ""))
-    }
-  }
-  
   def break(user: User, boundStatement: BoundStatement): BoundStatement = {
     boundStatement.bind(
       user.id,
