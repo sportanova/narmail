@@ -43,15 +43,10 @@ class SimpleClient() {
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.users (" +
         "id text PRIMARY KEY," +
-        "emails text," +
         "first_name text," +
         "last_name text," +
-        "access_token text," +
-        "refresh_token text," +
         "password text," +
       ");")
-      
-      // need email accounts table
     
       // TODO: Add timestamp as value
     session.execute(
@@ -91,7 +86,8 @@ class SimpleClient() {
       "username text," +
       "access_token text," +
       "refresh_token text," +
-      "PRIMARY KEY(user_id, provider, id));")
+      // TODO: make user only part of primary key?
+      "PRIMARY KEY(user_id));")
 
     // add timestamp to primary key
     session.execute(

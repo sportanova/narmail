@@ -55,31 +55,36 @@ class AccessTokenActor extends Actor {
       sender ! newAccount
     }
     case RefreshGmailAccessTokens(userId) => {
-      val accessTokens = (for {
-        ea <- EmailAccountIO().find(List(Eq("id",userId), Eq("provider", "gmail")), 10)
-        token <- refreshGmailAccessToken(ea.refreshToken)
-      } yield(token))
+      val refreshedAccounts = (for {
+        // TODO: MAKE THIS NOT GMAIL SPECIFIC. UPDATE ALL ACCOUNTS
+        ea <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
+        refreshedEA <- Some(refreshGmailAccessToken(ea))
+      } yield(refreshedEA))
 // TODO: actually test this
-      sender ! accessTokens
+      sender ! refreshedAccounts
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def refreshGmailAccessToken(refreshToken: String): Option[String] = {
+  def refreshGmailAccessToken(emailAccount: EmailAccount): Try[EmailAccount] = {
     val refreshURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(refreshURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded"))
-      .addBody(s"client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=refresh_token&refresh_token=$refreshToken")
+      .addBody(s"client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=refresh_token&refresh_token=${emailAccount.refreshToken}")
 
-    val json = Try{Await.result(req.apply, 10.second).toJValue}
-    json match {
-      case Success(s) => getAccessTokenFromJson(s)
-      case Failure(ex) => None
+    Try{Await.result(req.apply, 10.second).toJValue} match {
+      case Success(json) => {
+        getValueFromJson(json, "body", "access_token") match {
+          case Some(at) => EmailAccountIO().write(emailAccount.copy(accessToken = at))
+          case None => Failure(new Throwable("couldn't get accessToken value from json"))
+        }
+      }
+      case Failure(ex) => Failure(ex)
     }
   }
-  
-  def getAccessTokenFromJson(json: JValue): Option[String] = {
-    json.values.asInstanceOf[Map[String,Any]].get("body") match {
-      case Some(js) => JsonParser.parse(js.toString).values.asInstanceOf[Map[String,String]].get("access_token")
+
+  def getValueFromJson(json: JValue, firstField: String, secondField: String): Option[String] = {
+    json.values.asInstanceOf[Map[String,Any]].get(firstField) match {
+      case Some(js) => JsonParser.parse(js.toString).values.asInstanceOf[Map[String,String]].get(secondField)
       case None => None
     }
   }
@@ -94,9 +99,7 @@ class AccessTokenActor extends Actor {
       body <- json.values.asInstanceOf[Map[String,Any]].get("body")
       innerJSON <- Some(JsonParser.parse(body.toString).values.asInstanceOf[Map[String,String]])
       at <- innerJSON.get("access_token")
-                      // TODO: make option again
-//          rt <- innerJSON.get("refresh_token")
-      rt <- Some("watRefreshToken")
+      rt <- innerJSON.get("refresh_token")
     } yield(Map("accessToken" -> at, "refreshToken" -> rt))
   }
   
