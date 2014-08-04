@@ -10,15 +10,15 @@ import scala.util.Success
 import scala.util.Failure
 
 object UserActor {
-  case class CreateUser()  
+  case class CreateUser(firstName: String, lastName: String, password: String)  
 }
 
 class UserActor extends Actor {
   import com.textMailer.IO.actors.UserActor._
 
   def receive = {
-    case CreateUser() => {
-      val user = UserIO().write(User(UUIDs.random.toString, "", "", "")) match {
+    case CreateUser(firstName, lastName, password) => {
+      val user = UserIO().write(User(UUIDs.random.toString, firstName, lastName, password)) match {
         case Success(u) => Some(u)
         case Failure(ex) => None
       }

@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import scala.util.Failure
 import com.textMailer.IO.actors.UserActor.CreateUser
+import com.textMailer.models.User
 
 class UserRoutes (system: ActorSystem, userActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
@@ -38,7 +39,12 @@ class UserRoutes (system: ActorSystem, userActor: ActorRef) extends ScalatraServ
   implicit val defaultTimeout = Timeout(10000)
 
   post("/") {
-    val newUser = userActor ? CreateUser()
+    val userInfo = parsedBody.values.asInstanceOf[Map[String,String]]
+    val firstName = userInfo.getOrElse("firstName", "")
+    val lastName = userInfo.getOrElse("lastName", "")
+    val password = userInfo.getOrElse("password", "")
+
+    val newUser = userActor ? CreateUser(firstName, lastName, password)
     new AsyncResult { val is = newUser }
   }
 }
