@@ -56,7 +56,6 @@ class SimpleClient() {
       "subject text," +
       "recipients_hash text," +
       "time text," +
-      "recipients Set<text>," +
       "cc text," +
       "bcc text," +
       "body text," +
@@ -86,7 +85,7 @@ class SimpleClient() {
       "username text," +
       "access_token text," +
       "refresh_token text," +
-      "PRIMARY KEY(user_id));")
+      "PRIMARY KEY(user_id, id));")
 
     // add timestamp to primary key
     session.execute(

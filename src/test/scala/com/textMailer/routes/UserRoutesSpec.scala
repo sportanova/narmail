@@ -8,6 +8,9 @@ import com.textMailer.IO.Eq
 import com.textMailer.routes.UserRoutes
 import akka.actor.Props
 import com.textMailer.IO.actors.UserActor
+import org.json4s.JsonDSL.WithDouble._
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 class UserRoutesSpec extends MutableScalatraSpec {
   val prepare = PrepareData()
@@ -18,8 +21,15 @@ class UserRoutesSpec extends MutableScalatraSpec {
   prepare.DropTables
   prepare.CreateTables
 
-  "The refresh token" should {
-    "be used to get a new access token for Gmail" in {
+  "POST /user" should {
+    "be used create a new user when user info is provided" in {
+      post(s"/", compact(render(Map("lastName" -> "portanova"))), Map("Content-Type" -> "application/json")) {
+        status must_== 200
+        val res = parse(response.body).values.asInstanceOf[Map[String,String]]
+        res.get("lastName").get === "portanova"
+      }
+    }
+    "be used create a new user when no user info is provided" in {
       post(s"/") {
         status must_== 200
         val res = response.body

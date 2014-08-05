@@ -30,7 +30,7 @@ class ConversationRoutesSpec extends MutableScalatraSpec {
       get(s"/${user.id}") {
         status must_== 200
         val res = response.body
-        res === """[{"userId":"someId","subject":"someSubject","recipients":"peter@gmail.com"},{"userId":"someId","subject":"someSubject1","recipients":"stephen@gmail.com"}]"""
+        res === """[{"userId":"someId","subject":"someSubject","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"]},{"userId":"someId","subject":"someSubject1","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"]}]"""
       }
     }
   }

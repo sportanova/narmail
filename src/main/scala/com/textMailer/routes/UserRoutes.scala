@@ -31,6 +31,9 @@ import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import scala.util.Failure
 import com.textMailer.IO.actors.UserActor.CreateUser
 import com.textMailer.models.User
+import scala.util.Try
+import net.liftweb.json.JNothing
+import net.liftweb.json.JsonAST.JObject
 
 class UserRoutes (system: ActorSystem, userActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
@@ -39,7 +42,13 @@ class UserRoutes (system: ActorSystem, userActor: ActorRef) extends ScalatraServ
   implicit val defaultTimeout = Timeout(10000)
 
   post("/") {
-    val userInfo = parsedBody.values.asInstanceOf[Map[String,String]]
+    val userInfo = parsedBody.values match {
+      case x: JObject =>  x.asInstanceOf[Map[String,String]]
+      case JNothing => Map("" -> "")
+      case x: Map[String,String] => x.asInstanceOf[Map[String,String]]
+      case _ => Map("" -> "")
+    }
+
     val firstName = userInfo.getOrElse("firstName", "")
     val lastName = userInfo.getOrElse("lastName", "")
     val password = userInfo.getOrElse("password", "")

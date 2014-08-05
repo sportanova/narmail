@@ -6,7 +6,7 @@ case class Email (
   id: String,
   userId: String,
   subject: String,
-  recipients: String,
+  recipientsHash: String,
   time: String,
   cc: String,
   bcc: String,
