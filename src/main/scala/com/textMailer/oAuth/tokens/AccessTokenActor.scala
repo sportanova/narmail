@@ -60,8 +60,12 @@ class AccessTokenActor extends Actor {
         ea <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
         refreshedEA <- Some(refreshGmailAccessToken(ea))
       } yield(refreshedEA))
-// TODO: actually test this
-      sender ! refreshedAccounts
+      sender ! refreshedAccounts.map(acc => {
+        acc match {
+          case Success(a) => s"Successfully updated ${a.id} email account"
+          case Failure(ex) => s"Failed to update account for user $userId"
+        }
+      })
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }

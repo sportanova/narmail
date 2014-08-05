@@ -12,6 +12,7 @@ class ScalatraBootstrap extends LifeCycle {
   val conversationActor = system.actorOf(Props[ConversationActor])
   val accessTokenActor = system.actorOf(Props[AccessTokenActor])
   val userActor = system.actorOf(Props[UserActor])
+  val importEmailActor = system.actorOf(Props[ImportEmailActor])
 
   override def init(context: ServletContext) {
     context.mount(new TextMailerServlet, "/*")
@@ -19,6 +20,7 @@ class ScalatraBootstrap extends LifeCycle {
     context.mount(new ConversationRoutes(system, conversationActor), "/conversations")
     context.mount(new EmailRoutes(system, emailActor), "/emails")
     context.mount(new UserRoutes(system, userActor), "/users")
+    context.mount(new ImportEmailRoutes(system, importEmailActor), "/importEmail")
   }
   
   override def destroy(context:ServletContext) {
