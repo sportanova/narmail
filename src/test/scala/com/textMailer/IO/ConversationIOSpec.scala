@@ -13,10 +13,11 @@ class ConversationIOSpec extends MutableScalatraSpec {
 
   "EmailIO.write" should {
     "write to the db" in {
-      val conversation = Conversation("someUserId", "subject","recipients")
+      val conversation = Conversation("someUserId", "subject","sportano@gmail.com", Set("sportano@gmail.com"))
       val writtenConversation = ConversationIO().write(conversation)
-      val foundConversations = ConversationIO().find(List(Eq("user_id","someUserId"), Eq("recipients_string_hash","recipients"), Eq("subject","subject")), 10)
+      val foundConversations = ConversationIO().find(List(Eq("user_id","someUserId"), Eq("recipients_hash","sportano@gmail.com"), Eq("subject","subject")), 10)
       foundConversations.headOption.get.userId === "someUserId"
+      foundConversations.headOption.get.recipients === Set("sportano@gmail.com")
     }
   }
 }

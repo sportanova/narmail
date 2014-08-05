@@ -122,7 +122,7 @@ class ImportEmailActor extends Actor {
               case None => "no body"
             }
             
-            val conversation = Conversation(userId, subject, "")
+            val conversation = Conversation(userId, subject, "", Set())
             ConversationIO().write(conversation)
             
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase

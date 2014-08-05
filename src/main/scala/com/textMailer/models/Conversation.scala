@@ -5,5 +5,6 @@ import java.util.UUID
 case class Conversation (
   userId: String,
   subject: String,
-  recipients: String
+  recipientsHash: String,
+  recipients: Set[String]
 ) extends Model

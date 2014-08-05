@@ -54,13 +54,13 @@ class SimpleClient() {
       "id text," +
       "user_id text," +
       "subject text," +
-      "recipients_string text," +
+      "recipients_hash text," +
       "time text," +
-      "recipients text," +
+      "recipients Set<text>," +
       "cc text," +
       "bcc text," +
       "body text," +
-      "PRIMARY KEY((user_id, recipients_string, subject), time, id)" +
+      "PRIMARY KEY((user_id, recipients_hash, subject), time, id)" +
     ");")
     
     session.execute(
@@ -86,7 +86,6 @@ class SimpleClient() {
       "username text," +
       "access_token text," +
       "refresh_token text," +
-      // TODO: make user only part of primary key?
       "PRIMARY KEY(user_id));")
 
     // add timestamp to primary key
@@ -94,9 +93,9 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
         "user_id text," +
         "subject text," +
-        "recipients_string_hash text," +
-        "recipients_string text," +
-        "PRIMARY KEY((user_id), recipients_string_hash, subject)" +
+        "recipients_hash text," +
+        "recipients Set<text>," +
+        "PRIMARY KEY((user_id), recipients_hash, subject)" +
       ");")
   }
   
