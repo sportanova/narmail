@@ -56,8 +56,8 @@ class SimpleClient() {
       "subject text," +
       "recipients_hash text," +
       "time text," +
-      "cc text," +
-      "bcc text," +
+      "cc text," + // TODO: move to conversation?
+      "bcc text," + // move to conversation? And add "to"
       "body text," +
       "PRIMARY KEY((user_id, recipients_hash, subject), time, id)" +
     ");")

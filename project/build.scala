@@ -31,6 +31,7 @@ object TextmailerBuild extends Build {
     		"org.json4s"   %% "json4s-jackson" % "3.2.6",
         "com.stackmob" %% "newman" % "1.3.5",
         "com.datastax.cassandra" % "cassandra-driver-core" % "2.0.2",
+        "com.sun.mail" % "gimap" % "1.5.2",
         "joda-time" % "joda-time" % "2.3",
         "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "container",
         "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))

@@ -13,6 +13,7 @@ class EmailActor extends Actor {
   def receive = {
     case GetEmailsForConversation(userId, recipients, subject) => {
       val emails = EmailIO().find(List(), 1)
+      println(s"@@@@@@@@@@ emails $emails")
       sender ! emails
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"

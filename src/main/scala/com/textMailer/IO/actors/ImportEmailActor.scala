@@ -18,6 +18,13 @@ import com.datastax.driver.core.BoundStatement
 import java.util.Properties
 import javax.mail.internet.InternetAddress
 import com.textMailer.models.Conversation
+import java.security._
+import java.math.BigInteger
+import com.textMailer.models.Email
+import com.sun.mail.gimap.GmailMessage
+import com.sun.mail.imap.IMAPMessage
+import com.sun.mail.gimap.GmailFolder
+import com.sun.mail.gimap.GmailSSLStore
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])  
@@ -48,7 +55,7 @@ class ImportEmailActor extends Actor {
   
   def importGmail(userId: String, emailAddress: String, accessToken: String): Unit = {
    val props = new Properties();
-   props.put("mail.store.protocol", "imaps");
+   props.put("mail.store.protocol", "gimaps");
    props.put("mail.imap.ssl.enable", "true"); // required for Gmail
 //   props.put("mail.imaps.port", "587");
    props.put("mail.imap.sasl.enable", "true");
@@ -58,11 +65,15 @@ class ImportEmailActor extends Actor {
 
     val session = Session.getInstance(props)
 
-    val store = session.getStore("imap")
+    val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
+//    val store = session.getStore("imap")
     println(s"####### before connect")
-    store.connect("imap.googlemail.com", emailAddress, accessToken) // make this a try
+    store.connect(emailAddress, "Phornication5!") // TODO: make this a try
+    // store.connect("imap.googlemail.com", emailAddress, accessToken)
+    
     println(s"####### before folder")
-    val folder = store.getFolder("Inbox");
+//    val folder = store.getFolder("Inbox");
+    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
     println(s"####### before date")
     val date = (new DateTime).minusDays(1).toDate()
     val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
@@ -75,15 +86,20 @@ class ImportEmailActor extends Actor {
           val messages = folder.search(olderThan)
           // folder.getMessages()
           var a = 0;
-//          val userId = UUIDs.timeBased
+          
+          val md = MessageDigest.getInstance("MD5")
 
           messages.map(m => {
+            val gm = m.asInstanceOf[GmailMessage]
             val textOpt = getText(m)
             val emailId = UUIDs.random
+            
+            val thriftId = gm.getThrId()
+            println(s"@@@@@@@@@@@@@@@@ thriftId $thriftId")
 
             val sender = m.getFrom() match {
-              case null => "no_sender"
-              case Array() => "no_sender"
+              case null => ""
+              case Array() => ""
               case a => InternetAddress.parse(a(0).toString)(0).getAddress
             }
             println(s"################### sender $sender")
@@ -116,14 +132,28 @@ class ImportEmailActor extends Actor {
               case null => "no_subject"
               case x: String => x
             }
+            println(s"!!!!!!!!!!!! subject: $subject")
             println(s"<<<<<<<<<<<< text $textOpt")
             val text = textOpt match {
               case Some(t) => t.toString
               case None => "no body"
             }
             
-            val conversation = Conversation(userId, subject, "", Set())
+            val recipients = to ++ bcc ++ cc - emailAddress + sender
+            println(s"@@@@@@@@@@@ recipientsSet $recipients")
+            val recipientsString = recipients.toString
+            println(s"@@@@@@@@@@@ recipientsString $recipientsString")
+            md.reset()
+            md.update(recipientsString.getBytes());
+            val digest = md.digest()
+            val bigInt = new BigInteger(1,digest)
+            val recipientsHash = bigInt.toString(16)
+            println(s"############## hashText $recipientsHash")
+            
+            val conversation = Conversation(userId, subject, recipientsHash, recipients)
             ConversationIO().write(conversation)
+            val email = Email(UUIDs.random.toString, userId, subject, recipientsHash, "time", "cc", "bcc", text)
+            EmailIO().write(email)
             
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase
             
