@@ -56,29 +56,24 @@ class ImportEmailActor extends Actor {
   def importGmail(userId: String, emailAddress: String, accessToken: String): Unit = {
    val props = new Properties();
    props.put("mail.store.protocol", "gimaps");
-   props.put("mail.imap.ssl.enable", "true"); // required for Gmail
-//   props.put("mail.imaps.port", "587");
    props.put("mail.imap.sasl.enable", "true");
-   props.put("mail.imap.sasl.mechanisms", "XOAUTH2");
+   
+   props.put("mail.gimaps.sasl.enable", "true");
+   props.put("mail.gimaps.sasl.mechanisms", "XOAUTH2");
+
    props.put("mail.imap.auth.login.disable", "true");
    props.put("mail.imap.auth.plain.disable", "true");
 
     val session = Session.getInstance(props)
 
     val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
-//    val store = session.getStore("imap")
     println(s"####### before connect")
-    store.connect(emailAddress, "Phornication5!") // TODO: make this a try
-    // store.connect("imap.googlemail.com", emailAddress, accessToken)
-    
-    println(s"####### before folder")
-//    val folder = store.getFolder("Inbox");
+    store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
+
     val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
     println(s"####### before date")
     val date = (new DateTime).minusDays(1).toDate()
     val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
-    
-    println(s"<<<<<<<<<< working")
 
 
 //          if(!folder.isOpen())

@@ -26,7 +26,14 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   }
   
   get("/") {
-    val emails = emailActor ? GetEmailsForConversation("","","")
+    val userId = params.getOrElse("userId", "")
+    val subject = params.getOrElse("subject", "")
+    val recipientsHash = params.getOrElse("recipientsHash", "")
+    println(s"############### userId $userId")
+    println(s"############### subject $subject")
+    println(s"############### recipientsHash $recipientsHash")
+
+    val emails = emailActor ? GetEmailsForConversation(userId, recipientsHash, subject)
     new AsyncResult { val is = emails }
 //    val userId = params.getOrElse("userId", "no userId")
 //    val subject = params.getOrElse("subject", "no subject")
