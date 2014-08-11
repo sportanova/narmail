@@ -24,13 +24,13 @@ class ConversationRoutesSpec extends MutableScalatraSpec {
     "get conversations for a user" in {
       val user = User("someId", "Stephen", "Portanova", "PASSWORD")
       val writtenUser = UserIO().write(user)
-      ConversationIO().write(Conversation(user.id, "someSubject", "peter@gmail.com", Set("peter@gmail.com")))
-      ConversationIO().write(Conversation(user.id, "someSubject1", "stephen@gmail.com", Set("stephen@gmail.com")))
+      ConversationIO().write(Conversation(user.id, "peter@gmail.com", Set("peter@gmail.com")))
+      ConversationIO().write(Conversation(user.id, "stephen@gmail.com", Set("stephen@gmail.com")))
 
       get(s"/${user.id}") {
         status must_== 200
         val res = response.body
-        res === """[{"userId":"someId","subject":"someSubject","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"]},{"userId":"someId","subject":"someSubject1","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"]}]"""
+        res === """[{"userId":"someId","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"]},{"userId":"someId","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"]}]"""
       }
     }
   }

@@ -2,8 +2,8 @@ package com.textMailer.models
 
 import java.util.UUID
 
-case class Conversation (
+case class Topic (
   userId: String,
   recipientsHash: String,
-  recipients: Set[String]
+  subject: String
 ) extends Model

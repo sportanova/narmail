@@ -145,7 +145,7 @@ class ImportEmailActor extends Actor {
             val recipientsHash = bigInt.toString(16)
             println(s"############## hashText $recipientsHash")
             
-            val conversation = Conversation(userId, subject, recipientsHash, recipients)
+            val conversation = Conversation(userId, recipientsHash, recipients)
             ConversationIO().write(conversation)
             val email = Email(UUIDs.random.toString, userId, subject, recipientsHash, "time", "cc", "bcc", text)
             EmailIO().write(email)

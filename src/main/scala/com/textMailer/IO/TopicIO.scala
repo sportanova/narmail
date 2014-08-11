@@ -11,53 +11,54 @@ import scala.collection.JavaConversions._
 import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import scala.util.Try
+import com.textMailer.models.Topic
 
-object ConversationIO {
+object TopicIO {
   val client = SimpleClient()
-  private lazy val conversationIO = new ConversationIO(client)
-  def apply() = conversationIO 
+  private lazy val topicIO = new TopicIO(client)
+  def apply() = topicIO 
 }
 
-class ConversationIO(client: SimpleClient) extends QueryIO {
-  val table = "conversations_by_user"
+class TopicIO(client: SimpleClient) extends QueryIO {
+  val table = "topics_by_conversation"
   val session = client.getSession
   val keyspace = client.getKeyspace
 
   val curriedFind = curryFind(keyspace)(table)(build)(session) _
 
-  def find(clauses: List[CassandraClause], limit: Int): List[Conversation] = {
+  def find(clauses: List[CassandraClause], limit: Int): List[Topic] = {
     curriedFind(clauses)(limit)
   }
   
-  def build(row: Row): Conversation = {
+  def build(row: Row): Topic = {
     val str: java.lang.String = ""
     val set: java.util.Set[String] = setAsJavaSet(Set())
 
-    val userId = row.getString("user_id")
+    val id = row.getString("user_id")
     val recipientsHash = row.getString("recipients_hash")
-    val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String]
+    val subject = row.getString("subject")
     
-    Conversation(userId, recipientsHash, recipients)
+    Topic(id, recipientsHash, subject)
   }
   
   val preparedStatement = session.prepare(
-    s"INSERT INTO $keyspace.conversations_by_user " +
-    "(user_id,recipients_hash, recipients) " +
+    s"INSERT INTO $keyspace.topics_by_conversation " +
+    "(user_id, recipients_hash, subject) " +
     "VALUES (?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
-  def write(conversation: Conversation): Try[Conversation] = {
-    curriedWrite(conversation)
+  def write(topic: Topic): Try[Topic] = {
+    curriedWrite(topic)
   }
   
-  def break(conversation: Conversation, boundStatement: BoundStatement): BoundStatement = {
+  def break(topic: Topic, boundStatement: BoundStatement): BoundStatement = {
 //    val set: java.util.Set[String] = conversation.recipients
 
     boundStatement.bind(
-      conversation.userId,
-      conversation.recipientsHash,
-      setAsJavaSet(conversation.recipients)
+      topic.userId,
+      topic.recipientsHash,
+      topic.subject
     )
   }
 }

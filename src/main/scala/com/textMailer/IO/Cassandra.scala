@@ -87,15 +87,24 @@ class SimpleClient() {
       "refresh_token text," +
       "PRIMARY KEY(user_id, id));")
 
-    // add timestamp to primary key
+    // add timestamp to primary key?
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
         "user_id text," +
-        "subject text," +
         "recipients_hash text," +
         "recipients Set<text>," +
-        "PRIMARY KEY((user_id), recipients_hash, subject)" +
-      ");")
+        "PRIMARY KEY(user_id, recipients_hash)" +
+    ");")
+    
+    session.execute(
+      s"CREATE TABLE IF NOT EXISTS $keyspace.topics_by_conversation (" +
+        "user_id text," +
+        "recipients_hash text," +
+        "subject text," +
+        "PRIMARY KEY((user_id, recipients_hash), subject)" +
+    ");")
+      
+      // user => conversation => topic => email
   }
   
   def dropKeyspace(keyspace: String): Unit = {

@@ -13,11 +13,13 @@ class ScalatraBootstrap extends LifeCycle {
   val accessTokenActor = system.actorOf(Props[AccessTokenActor])
   val userActor = system.actorOf(Props[UserActor])
   val importEmailActor = system.actorOf(Props[ImportEmailActor])
+  val topicActor = system.actorOf(Props[TopicActor])
 
   override def init(context: ServletContext) {
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")
     context.mount(new ConversationRoutes(system, conversationActor), "/conversations")
+    context.mount(new TopicRoutes(system, topicActor), "/topics")
     context.mount(new EmailRoutes(system, emailActor), "/emails")
     context.mount(new UserRoutes(system, userActor), "/users")
     context.mount(new ImportEmailRoutes(system, importEmailActor), "/importEmail")
