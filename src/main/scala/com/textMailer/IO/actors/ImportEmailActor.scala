@@ -25,6 +25,7 @@ import com.sun.mail.gimap.GmailMessage
 import com.sun.mail.imap.IMAPMessage
 import com.sun.mail.gimap.GmailFolder
 import com.sun.mail.gimap.GmailSSLStore
+import com.textMailer.models.Topic
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])  
@@ -89,8 +90,8 @@ class ImportEmailActor extends Actor {
             val textOpt = getText(m)
             val emailId = UUIDs.random
             
-            val thriftId = gm.getThrId()
-            println(s"@@@@@@@@@@@@@@@@ thriftId $thriftId")
+            val threadId = gm.getThrId()
+            println(s"@@@@@@@@@@@@@@@@ thriftId $threadId")
 
             val sender = m.getFrom() match {
               case null => ""
@@ -147,7 +148,9 @@ class ImportEmailActor extends Actor {
             
             val conversation = Conversation(userId, recipientsHash, recipients)
             ConversationIO().write(conversation)
-            val email = Email(UUIDs.random.toString, userId, subject, recipientsHash, "time", "cc", "bcc", text)
+            val topic = Topic(userId, recipientsHash, threadId)
+            TopicIO().write(topic)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, "cc", "bcc", text)
             EmailIO().write(email)
             
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase

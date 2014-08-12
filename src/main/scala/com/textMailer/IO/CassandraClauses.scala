@@ -7,7 +7,7 @@ trait CassandraClause {
   def toClause: Clause
 }
 
-case class Eq(name: String, value: String) extends CassandraClause {
+case class Eq(name: String, value: Any) extends CassandraClause {
   def toClause: Clause = {
     EqOp(this.name, this.value)
   }

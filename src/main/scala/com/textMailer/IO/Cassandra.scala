@@ -50,16 +50,17 @@ class SimpleClient() {
     
       // TODO: Add timestamp as value
     session.execute(
-    s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
+    s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
       "id text," +
       "user_id text," +
-      "subject text," +
+      "thread_id bigint," +
       "recipients_hash text," +
       "time text," +
+      "subject text," +
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
       "body text," +
-      "PRIMARY KEY((user_id, recipients_hash, subject), time, id)" +
+      "PRIMARY KEY((user_id, recipients_hash, thread_id), time, id)" +
     ");")
     
     session.execute(
@@ -100,8 +101,8 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.topics_by_conversation (" +
         "user_id text," +
         "recipients_hash text," +
-        "subject text," +
-        "PRIMARY KEY((user_id, recipients_hash), subject)" +
+        "thread_id bigint," +
+        "PRIMARY KEY((user_id, recipients_hash), thread_id)" +
     ");")
       
       // user => conversation => topic => email

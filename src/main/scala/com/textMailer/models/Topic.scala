@@ -5,5 +5,5 @@ import java.util.UUID
 case class Topic (
   userId: String,
   recipientsHash: String,
-  subject: String
+  threadId: Long
 ) extends Model

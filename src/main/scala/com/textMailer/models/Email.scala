@@ -5,9 +5,10 @@ import java.util.UUID
 case class Email (
   id: String,
   userId: String,
-  subject: String,
+  threadId: Long,
   recipientsHash: String,
   time: String,
+  subject: String,
   cc: String,
   bcc: String,
   body: String

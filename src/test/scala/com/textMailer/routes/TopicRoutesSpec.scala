@@ -29,13 +29,13 @@ class TopicRoutesSpec extends MutableScalatraSpec {
       val user = User("someId", "Stephen", "Portanova", "PASSWORD")
       val writtenUser = UserIO().write(user)
       val recipientsHash = "dasfasfasfasd"
-      TopicIO().write(Topic(user.id, recipientsHash, "subject1"))
-      TopicIO().write(Topic(user.id, recipientsHash, "subject2"))
+      TopicIO().write(Topic(user.id, recipientsHash, 4534535l))
+      TopicIO().write(Topic(user.id, recipientsHash, 54534535l))
 
       get(s"/${user.id}/$recipientsHash") {
         status must_== 200
         val res = response.body
-        res === """[{"userId":"someId","recipientsHash":"dasfasfasfasd","subject":"subject1"},{"userId":"someId","recipientsHash":"dasfasfasfasd","subject":"subject2"}]"""
+        res === """[{"userId":"someId","recipientsHash":"dasfasfasfasd","threadId":4534535},{"userId":"someId","recipientsHash":"dasfasfasfasd","threadId":54534535}]"""
       }
     }
   }
