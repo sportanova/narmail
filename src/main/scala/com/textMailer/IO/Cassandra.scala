@@ -102,7 +102,8 @@ class SimpleClient() {
         "user_id text," +
         "recipients_hash text," +
         "thread_id bigint," +
-        "PRIMARY KEY((user_id, recipients_hash), thread_id)" +
+        "subject text," +
+        "PRIMARY KEY((user_id, recipients_hash), thread_id)" + // add subject to compound, and get first one? would keep subject from getting mangled with Re:re:re:
     ");")
       
       // user => conversation => topic => email

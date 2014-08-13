@@ -148,7 +148,7 @@ class ImportEmailActor extends Actor {
             
             val conversation = Conversation(userId, recipientsHash, recipients)
             ConversationIO().write(conversation)
-            val topic = Topic(userId, recipientsHash, threadId)
+            val topic = Topic(userId, recipientsHash, threadId, subject)
             TopicIO().write(topic)
             val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, "cc", "bcc", text)
             EmailIO().write(email)
