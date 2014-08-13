@@ -5,16 +5,22 @@ import com.textMailer.IO.EmailIO
 import com.textMailer.IO.Eq
 
 object EmailActor {
-  case class GetEmailsForConversation(userId: String, recipients: String, subject: String)  
+  case class GetEmailsForTopic(userId: Option[String], threadId: Option[String])  
 }
 
 class EmailActor extends Actor {
   import com.textMailer.IO.actors.EmailActor._
 
   def receive = {
-    case GetEmailsForConversation(userId, recipients, subject) => {
-      val emails = EmailIO().find(List(Eq("user_id", userId), Eq("recipients_hash", recipients), Eq("subject", subject)), 40)
-      println(s"@@@@@@@@@@ emails $emails")
+    case GetEmailsForTopic(userId, threadId) => {
+      val emails =  (for {
+        uid <- userId
+        tid <- threadId
+      } yield(uid, tid)) match {
+        case Some(ids) => EmailIO().find(List(Eq("user_id", ids._1), Eq("thread_id", ids._2.toLong)), 40)
+        case None => List()
+      }
+
       sender ! emails
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"

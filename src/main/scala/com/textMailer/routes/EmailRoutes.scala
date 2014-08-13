@@ -19,29 +19,17 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   protected implicit def executor: ExecutionContext = system.dispatcher
 
   import _root_.akka.pattern.ask
-  implicit val defaultTimeout = Timeout(10)
+  implicit val defaultTimeout = Timeout(1000)
   
   before() {
     contentType = formats("json")
   }
   
-  get("/") {
-    val userId = params.getOrElse("userId", "")
-    val subject = params.getOrElse("subject", "")
-    val recipientsHash = params.getOrElse("recipientsHash", "")
-    println(s"############### userId $userId")
-    println(s"############### subject $subject")
-    println(s"############### recipientsHash $recipientsHash")
+  get("/:userId/:threadId") {
+    val userId = params.get("userId")
+    val threadId = params.get("threadId")
 
-    val emails = emailActor ? GetEmailsForConversation(userId, recipientsHash, subject)
+    val emails = emailActor ? GetEmailsForTopic(userId, threadId)
     new AsyncResult { val is = emails }
-//    val userId = params.getOrElse("userId", "no userId")
-//    val subject = params.getOrElse("subject", "no subject")
-//    val recipients = params.getOrElse("recipients", "recipients")
-//    println(s"########## subject $subject")
-//    println(s"########## recipients $recipients")
-//    val emails = EmailIO().find(List(Eq("user_id","somethingelse")), 100)
-//    println(s"@@@@@@@@@ userId $emails")
-//    emails
   }
 }

@@ -49,6 +49,7 @@ class SimpleClient() {
       ");")
     
       // TODO: Add timestamp as value
+      // userId in primary key?
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
       "id text," +
@@ -60,7 +61,7 @@ class SimpleClient() {
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
       "body text," +
-      "PRIMARY KEY((user_id, recipients_hash, thread_id), time, id)" +
+      "PRIMARY KEY((user_id, thread_id), time, id)" +
     ");")
     
     session.execute(

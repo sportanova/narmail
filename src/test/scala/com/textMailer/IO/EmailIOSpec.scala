@@ -15,7 +15,7 @@ class EmailIOSpec extends MutableScalatraSpec {
     "write to the db" in {
       val email = Email("someId", "someUserId", 4535335l, "recipients","time", "subject", "cc","bcc","body")
       val writtenEmail = EmailIO().write(email)
-      val foundEmails = EmailIO().find(List(Eq("user_id","someUserId"), Eq("recipients_hash","recipients"), Eq("thread_id", 4535335l)), 10)
+      val foundEmails = EmailIO().find(List(Eq("user_id","someUserId"), Eq("thread_id", 4535335l)), 10)
       foundEmails.headOption.get.id === "someUserId"
     }
   }

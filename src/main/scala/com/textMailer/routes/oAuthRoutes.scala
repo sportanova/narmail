@@ -37,7 +37,7 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
 
   import _root_.akka.pattern.ask
   implicit val defaultTimeout = Timeout(10000) 
-  // https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&access_type=offline&redirect_uri=http://localhost:8080/oauth/oauth2callback&state=a109ae1e-d9c5-4fc9-9c7d-33d7907dd63f&scope=https://mail.google.com/ email
+  // https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com&access_type=offline&redirect_uri=http://localhost:8080/oauth/oauth2callback&state=2f3452ed-b7d2-421b-9889-36cf664655ea&scope=https://mail.google.com/ email
   // refreshToken = 1/roJI5cuO89mcZgj1e3N67kAxmSA1IBf5KEYZM7voWOo
 
   put("/accessToken/:userId") {
