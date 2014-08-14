@@ -60,8 +60,8 @@ class SimpleClient() {
       "subject text," +
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
-      "body_text text," +
-      "body_html text," +
+      "text_body text," +
+      "html_body text," +
       "PRIMARY KEY((user_id, thread_id), time, id)" + // todo: make this idempotent, add hash of text body to row key?
     ");")
     
