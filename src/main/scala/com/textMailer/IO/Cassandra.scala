@@ -60,7 +60,8 @@ class SimpleClient() {
       "subject text," +
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
-      "body text," +
+      "body_text text," +
+      "body_html text," +
       "PRIMARY KEY((user_id, thread_id), time, id)" +
     ");")
     

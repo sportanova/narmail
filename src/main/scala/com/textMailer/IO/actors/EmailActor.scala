@@ -21,6 +21,7 @@ class EmailActor extends Actor {
         case None => List()
       }
 
+      println(s"@@@@@@@@@@ emails $emails")
       sender ! emails
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"

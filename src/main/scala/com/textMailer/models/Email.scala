@@ -11,5 +11,6 @@ case class Email (
   subject: String,
   cc: String,
   bcc: String,
-  body: String
+  bodyText: String,
+  bodyHtml: String
 ) extends Model

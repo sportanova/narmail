@@ -87,11 +87,22 @@ class ImportEmailActor extends Actor {
 
           messages.map(m => {
             val gm = m.asInstanceOf[GmailMessage]
-            val textOpt = getText(m)
+            val body = getText(m)
+            val text = body.get("text")  match {
+              case Some(t) => t.toString
+              case None => "no text"
+            }
+            val html = body.get("html")  match {
+              case Some(h) => h.toString
+              case None => "no html"
+            }
+            
+            println(s"<<<<<<<<<<<< text $text")
+            println(s"<<<<<<<<<<<< html $html")
+
             val emailId = UUIDs.random
             
             val threadId = gm.getThrId()
-            println(s"@@@@@@@@@@@@@@@@ thriftId $threadId")
 
             val sender = m.getFrom() match {
               case null => ""
@@ -129,11 +140,6 @@ class ImportEmailActor extends Actor {
               case x: String => x
             }
             println(s"!!!!!!!!!!!! subject: $subject")
-            println(s"<<<<<<<<<<<< text $textOpt")
-            val text = textOpt match {
-              case Some(t) => t.toString
-              case None => "no body"
-            }
             
             val recipients = to ++ bcc ++ cc - emailAddress + sender
             println(s"@@@@@@@@@@@ recipientsSet $recipients")
@@ -150,7 +156,7 @@ class ImportEmailActor extends Actor {
             ConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject)
             TopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, "cc", "bcc", text)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, "cc", "bcc", text, html)
             EmailIO().write(email)
             
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase
@@ -166,25 +172,28 @@ class ImportEmailActor extends Actor {
           })
   }
   
-  def getText(m: Message): Option[Object] = {
+  def getText(m: Message): Map[String, Object] = {
     println(s"%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW MESSAGE")
     val contentObject = m.getContent()
     if(contentObject.isInstanceOf[Multipart]) {
       val content: Multipart = contentObject.asInstanceOf[Multipart];
       val count = content.getCount() - 1;
       
+      var html: Object = null
+      var text: Object = null
+      
       breakable {for(i <- 0 to count) {
         val part = content.getBodyPart(i);
         if(part.isMimeType("text/plain")) {
-          return Some(part.getContent)
+          text = part.getContent
         }
         else if(part.isMimeType("text/html"))
         {
-          return Some(part.getContent)
+          html = part.getContent
         }
       }}
-    }
-    None
+      Map("html" -> html, "text" -> text)
+    } else Map()
   }
 }
 
