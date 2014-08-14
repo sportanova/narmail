@@ -40,8 +40,8 @@ class ImportEmailRoutes (system: ActorSystem, importEmailActor: ActorRef) extend
 
   get("/:userId") {
     val userId = params.get("userId")
-    val refreshToken = importEmailActor ? ImportEmail(userId)
+    importEmailActor ! ImportEmail(userId)
 
-    new AsyncResult { val is = refreshToken }
+    "importing emails"
   }
 }

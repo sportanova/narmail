@@ -88,13 +88,21 @@ class ImportEmailActor extends Actor {
           messages.map(m => {
             val gm = m.asInstanceOf[GmailMessage]
             val body = getText(m)
-            val text = body.get("text")  match {
+            println(s"!!!!!!!!!!!!!!!!!!!!! body $body")
+            val text = (for{
+              textValue <- body.get("text")
+              text <- textValue
+            } yield(text)) match {
               case Some(t) => t.toString
               case None => "no text"
             }
-            val html = body.get("html")  match {
-              case Some(h) => h.toString
-              case None => "no html"
+            
+            val html = (for{
+              htmlValue <- body.get("html")
+              html <- htmlValue
+            } yield(html)) match {
+              case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
+              case None => ""
             }
             
             println(s"<<<<<<<<<<<< text $text")
@@ -145,11 +153,7 @@ class ImportEmailActor extends Actor {
             println(s"@@@@@@@@@@@ recipientsSet $recipients")
             val recipientsString = recipients.toString
             println(s"@@@@@@@@@@@ recipientsString $recipientsString")
-            md.reset()
-            md.update(recipientsString.getBytes());
-            val digest = md.digest()
-            val bigInt = new BigInteger(1,digest)
-            val recipientsHash = bigInt.toString(16)
+            val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
             
             val conversation = Conversation(userId, recipientsHash, recipients)
@@ -172,24 +176,34 @@ class ImportEmailActor extends Actor {
           })
   }
   
-  def getText(m: Message): Map[String, Object] = {
+  def md5Hash(str: String) = {
+    val md = MessageDigest.getInstance("MD5")
+    
+    md.reset()
+    md.update(str.getBytes());
+    val digest = md.digest()
+    val bigInt = new BigInteger(1,digest)
+    bigInt.toString(16)
+  }
+  
+  def getText(m: Message): Map[String, Option[Object]] = {
     println(s"%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW MESSAGE")
     val contentObject = m.getContent()
     if(contentObject.isInstanceOf[Multipart]) {
       val content: Multipart = contentObject.asInstanceOf[Multipart];
       val count = content.getCount() - 1;
       
-      var html: Object = null
-      var text: Object = null
+      var html: Option[Object] = None
+      var text: Option[Object] = None
       
       breakable {for(i <- 0 to count) {
         val part = content.getBodyPart(i);
         if(part.isMimeType("text/plain")) {
-          text = part.getContent
+          text = Some(part.getContent)
         }
         else if(part.isMimeType("text/html"))
         {
-          html = part.getContent
+          html = Some(part.getContent)
         }
       }}
       Map("html" -> html, "text" -> text)
