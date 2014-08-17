@@ -16,6 +16,8 @@ class ScalatraBootstrap extends LifeCycle {
   val topicActor = system.actorOf(Props[TopicActor])
 
   override def init(context: ServletContext) {
+//    context.initParameters("org.scalatra.Port") = "443"
+
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")
     context.mount(new ConversationRoutes(system, conversationActor), "/conversations")
