@@ -9,6 +9,7 @@ case class Email (
   recipientsHash: String,
   time: String,
   subject: String,
+  sender: String,
   cc: String,
   bcc: String,
   textBody: String,

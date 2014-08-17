@@ -160,7 +160,7 @@ class ImportEmailActor extends Actor {
             ConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject)
             TopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, "cc", "bcc", text, html)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
             
 //            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase

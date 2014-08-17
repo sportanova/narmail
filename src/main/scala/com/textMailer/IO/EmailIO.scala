@@ -47,6 +47,7 @@ class EmailIO(client: SimpleClient) extends QueryIO {
     val userId = row.getString("user_id")
     val threadId: java.lang.Long = row.getLong("thread_id")
     val subject = row.getString("subject")
+    val sender = row.getString("sender")
     val recipientsHash = row.getString("recipients_hash")
     val time = row.getString("time")
     val cc = row.getString("cc")
@@ -54,13 +55,13 @@ class EmailIO(client: SimpleClient) extends QueryIO {
     val textBody = row.getString("text_body")
     val htmlBody = row.getString("html_body")
     
-    Email(id, userId, threadId, recipientsHash, time, subject, cc, bcc, textBody, htmlBody)
+    Email(id, userId, threadId, recipientsHash, time, subject, sender, cc, bcc, textBody, htmlBody)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(id, user_id, thread_id, recipients_hash, time, subject, cc, bcc, text_body, html_body) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+    "(id, user_id, thread_id, recipients_hash, time, subject, sender, cc, bcc, text_body, html_body) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -78,6 +79,7 @@ class EmailIO(client: SimpleClient) extends QueryIO {
       email.recipientsHash,
       email.time,
       email.subject,
+      email.sender,
       email.cc,
       email.bcc,
       email.textBody,

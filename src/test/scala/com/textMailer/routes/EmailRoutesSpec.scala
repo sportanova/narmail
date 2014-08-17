@@ -33,15 +33,15 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       val recipientsHash = "dasfasfasfasd"
       val threadId = 4534535l
       TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1"))
-      val email1 = Email("someEmId1", "someId", threadId, recipientsHash, "time", "subject1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
-      val email2 = Email("someEmId2", "someId", threadId, recipientsHash, "time1", "subject1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
+      val email1 = Email("someEmId1", "someId", threadId, recipientsHash, "time", "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
+      val email2 = Email("someEmId2", "someId", threadId, recipientsHash, "time1", "subject1", "sender2", "cc", "bcc", "emailBodyText", "emailBodyHtml")
       EmailIO().write(email1)
       EmailIO().write(email2)
 
       get(s"/${user.id}/${threadId.toString}") {
         status must_== 200
         val res = response.body
-        res === """[{"id":"someId","userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","time":"time","subject":"subject1","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"},{"id":"someId","userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","time":"time1","subject":"subject1","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"}]"""
+        res === """[{"id":"someId","userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","time":"time","subject":"subject1","sender":"sender1","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"},{"id":"someId","userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","time":"time1","subject":"subject1","sender":"sender2","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"}]"""
       }
     }
   }

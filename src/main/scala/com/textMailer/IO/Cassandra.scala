@@ -58,6 +58,7 @@ class SimpleClient() {
       "recipients_hash text," +
       "time text," +
       "subject text," +
+      "sender text," +
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
       "text_body text," +
