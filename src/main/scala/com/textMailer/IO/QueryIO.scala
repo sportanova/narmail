@@ -15,12 +15,32 @@ import com.datastax.driver.core.BoundStatement
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import java.util.concurrent.TimeUnit.SECONDS
 
 trait QueryIO {
+  import cassandra.resultset._
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  // wrap in Try?
   def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
     val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)
-    session.execute(query).all.asScala.toList.map(row => build(row))
+    session.executeAsync(query).getUninterruptibly(10l, SECONDS).asScala.toList.map(row => build(row))
+  }
+
+  def curryFind1[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
+    val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
+    val queryWithClauses = addWhereClauses(query, clauses)
+//    val x = session.executeAsync(query).map(resultSet => {
+//      resultSet.map(row => build(row))
+//    })
+    for {
+      result <- session.executeAsync(query).map(_.all().asScala.toList.map(row => build(row))) 
+    } yield (result)
+    
+    List()
+//    println(s"############ xxx $x")
+//    session.executeAsync(query).getUninterruptibly(10l, SECONDS).asScala.toList.map(row => build(row))
   }
   
   def addWhereClauses(query: Select, allClauses: List[CassandraClause]): Select = {
