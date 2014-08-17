@@ -12,6 +12,7 @@ import com.datastax.driver.core.ResultSet
 import com.textMailer.models.Index1
 import collection.JavaConversions._
 import scala.util.Try
+import scala.concurrent.Future
 
 object Index1IO {
   val client = SimpleClient()
@@ -30,6 +31,12 @@ class Index1IO(client: SimpleClient) extends QueryIO {
     curriedFind(clauses)(limit)
   }
   
+  val asyncCurriedFind = asyncCurryFind(keyspace)(table)(build)(session) _
+
+  def asyncFind(clauses: List[CassandraClause], limit: Int): Future[List[Index1]] = {
+    asyncCurriedFind(clauses)(limit)
+  }
+  
   def build(row: Row): Index1 = {
     val indexedValue = row.getString("indexed_value_1")
     val str: java.lang.String = ""
@@ -44,9 +51,14 @@ class Index1IO(client: SimpleClient) extends QueryIO {
     "VALUES (?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
+  val asyncCurriedWrite = asyncCurryWrite(session)(preparedStatement)(break) _
 
   def write(index1: Index1): Try[Index1] = {
     curriedWrite(index1)
+  }
+  
+  def asyncWrite(index1: Index1): Try[Future[Unit]] = {
+    asyncCurriedWrite(index1)
   }
   
   def break(index1: Index1, boundStatement: BoundStatement): BoundStatement = {
