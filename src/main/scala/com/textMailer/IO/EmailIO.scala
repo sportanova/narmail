@@ -11,6 +11,7 @@ import com.textMailer.models.Model
 import org.joda.time.DateTime
 import com.datastax.driver.core.ResultSet
 import scala.util.Try
+import scala.concurrent.Future
 
 object EmailIO {
   val client = SimpleClient()
@@ -27,6 +28,18 @@ class EmailIO(client: SimpleClient) extends QueryIO {
 
   def find(clauses: List[CassandraClause], limit: Int): List[Email] = {
     curriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedFind = asyncCurryFind(keyspace)(table)(build)(session) _
+
+  def asyncFind(clauses: List[CassandraClause], limit: Int): Future[List[Email]] = {
+    asyncCurriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedWrite = asyncCurryWrite(session)(preparedStatement)(break) _
+  
+  def asyncWrite(email: Email): Future[Email] = {
+    asyncCurriedWrite(email)
   }
   
   def build(row: Row): Email = {

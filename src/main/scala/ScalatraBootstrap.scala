@@ -5,6 +5,7 @@ import com.textMailer.routes._
 import _root_.akka.actor.{ActorSystem, Props}
 import com.textMailer.IO.actors._
 import com.textMailer.oAuth.tokens.AccessTokenActor
+import com.textMailer.IO.SimpleClient
 
 class ScalatraBootstrap extends LifeCycle {
   val system = ActorSystem()
@@ -14,8 +15,14 @@ class ScalatraBootstrap extends LifeCycle {
   val userActor = system.actorOf(Props[UserActor])
   val importEmailActor = system.actorOf(Props[ImportEmailActor])
   val topicActor = system.actorOf(Props[TopicActor])
+  
+  val client = SimpleClient();
 
   override def init(context: ServletContext) {
+    client.connect("127.0.0.1"); // 54.183.164.178       127.0.0.1    // eip 54.183.66.201
+    client.setKeyspace("app")
+    client.createSchema();
+
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")
     context.mount(new ConversationRoutes(system, conversationActor), "/conversations")
@@ -26,6 +33,7 @@ class ScalatraBootstrap extends LifeCycle {
   }
   
   override def destroy(context:ServletContext) {
+    client.close();
     system.shutdown()
   }
 }

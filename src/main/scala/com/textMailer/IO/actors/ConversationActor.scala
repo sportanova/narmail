@@ -10,11 +10,13 @@ object ConversationActor {
 
 class ConversationActor extends Actor {
   import com.textMailer.IO.actors.ConversationActor._
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import akka.pattern.pipe
 
   def receive = {
     case GetConversationsByUser(userId) => {
-      val conversations = ConversationIO().find(List(Eq("user_id",userId)), 100)
-      sender ! conversations
+      val conversations = ConversationIO().asyncFind(List(Eq("user_id",userId)), 100)
+      conversations pipeTo sender 
     }
     case _ => sender ! "Error: Didn't match case in ConversationActor"
   }

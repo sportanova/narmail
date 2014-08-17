@@ -54,9 +54,9 @@ trait QueryIO {
     }
   }
   
-  def asyncCurryWrite[A <: Model](session: Session)(preparedStatement: PreparedStatement)(break: (A,BoundStatement) => BoundStatement)(model: A): Try[Future[Unit]] = {
+  def asyncCurryWrite[A <: Model](session: Session)(preparedStatement: PreparedStatement)(break: (A,BoundStatement) => BoundStatement)(model: A): Future[A] = {
     val unboundBoundStatement = new BoundStatement(preparedStatement);
     val boundStatement = break(model, unboundBoundStatement)
-    Try(session.executeAsync(boundStatement).map(resultSet => {}))
+    session.executeAsync(boundStatement).map(resultSet => {model})
   }
 }

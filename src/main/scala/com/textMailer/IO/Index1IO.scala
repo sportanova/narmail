@@ -57,7 +57,7 @@ class Index1IO(client: SimpleClient) extends QueryIO {
     curriedWrite(index1)
   }
   
-  def asyncWrite(index1: Index1): Try[Future[Unit]] = {
+  def asyncWrite(index1: Index1): Future[Index1] = {
     asyncCurriedWrite(index1)
   }
   

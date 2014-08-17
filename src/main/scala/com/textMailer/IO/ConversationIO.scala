@@ -11,6 +11,7 @@ import scala.collection.JavaConversions._
 import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import scala.util.Try
+import scala.concurrent.Future
 
 object ConversationIO {
   val client = SimpleClient()
@@ -27,6 +28,18 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
 
   def find(clauses: List[CassandraClause], limit: Int): List[Conversation] = {
     curriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedFind = asyncCurryFind(keyspace)(table)(build)(session) _
+
+  def asyncFind(clauses: List[CassandraClause], limit: Int): Future[List[Conversation]] = {
+    asyncCurriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedWrite = asyncCurryWrite(session)(preparedStatement)(break) _
+  
+  def asyncWrite(conversation: Conversation): Future[Conversation] = {
+    asyncCurriedWrite(conversation)
   }
   
   def build(row: Row): Conversation = {

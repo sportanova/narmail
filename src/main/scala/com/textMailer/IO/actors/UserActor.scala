@@ -15,14 +15,13 @@ object UserActor {
 
 class UserActor extends Actor {
   import com.textMailer.IO.actors.UserActor._
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import akka.pattern.pipe
 
   def receive = {
     case CreateUser(firstName, lastName, password) => {
-      val user = UserIO().write(User(UUIDs.random.toString, firstName, lastName, password)) match {
-        case Success(u) => Some(u)
-        case Failure(ex) => None
-      }
-      sender ! user
+      val user = UserIO().asyncWrite(User(UUIDs.random.toString, firstName, lastName, password))
+      user pipeTo sender
     }
     case _ => sender ! "Error: Didn't match case in ConversationActor"
   }

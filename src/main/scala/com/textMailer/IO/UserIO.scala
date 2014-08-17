@@ -13,6 +13,7 @@ import com.textMailer.models.User
 import scala.util.Try
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.utils.UUIDs
+import scala.concurrent.Future
 
 object UserIO {
   val client = SimpleClient()
@@ -29,6 +30,18 @@ class UserIO(client: SimpleClient) extends QueryIO {
 
   def find(clauses: List[CassandraClause], limit: Int): List[User] = {
     curriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedFind = asyncCurryFind(keyspace)(table)(build)(session) _
+
+  def asyncFind(clauses: List[CassandraClause], limit: Int): Future[List[User]] = {
+    asyncCurriedFind(clauses)(limit)
+  }
+  
+  val asyncCurriedWrite = asyncCurryWrite(session)(preparedStatement)(break) _
+  
+  def asyncWrite(user: User): Future[User] = {
+    asyncCurriedWrite(user)
   }
   
   def build(row: Row): User = {
