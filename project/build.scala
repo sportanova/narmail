@@ -14,9 +14,9 @@ object TextmailerBuild extends Build {
   val port = SettingKey[Int]("port")
   val Conf = config("container")
   
-  val portNum = sys.env.get("generalServerPort") match {
-    case Some(p) => p.toInt
-    case None => 8080
+  val portNum = System.getProperty("generalServerPort") match {
+    case p: String => p.toInt
+    case null => 8080
   }
 
   lazy val project = Project (
