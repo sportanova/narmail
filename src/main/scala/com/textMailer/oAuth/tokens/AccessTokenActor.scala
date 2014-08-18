@@ -39,6 +39,12 @@ class AccessTokenActor extends Actor {
   def receive = {
     // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
     case AddGmailAccount(userId, accessCode) => {
+      println(s"############### userId $userId")
+      println(s"############### accessCode $accessCode")
+      val tokens = getGmailAccessToken(accessCode.get)
+      println(s"############### tokens ${tokens}")
+      val email = getGmailAddress(tokens.get.get("accessToken").get)
+      println(s"############### email ${email}")
       val newAccount = (for {
         id <- userId
         ac <- accessCode
@@ -47,7 +53,6 @@ class AccessTokenActor extends Actor {
         rt <- tokens.get("refreshToken")
         email <- getGmailAddress(at)
       } yield (Map("userId" -> id, "accessToken" -> at, "email" -> email, "refreshToken" -> rt))) match {
-        // TODO: Actually test this
         case Some(userInfo) => EmailAccountIO().write(EmailAccount(userInfo.get("userId").get, UUIDs.random().toString, "gmail", userInfo.get("email").get, userInfo.get("accessToken").get, userInfo.get("refreshToken").get))
         case None => Failure(new Throwable("Couldn't create account: Missing id || ac || tokens || at || rt || email"))
       }
