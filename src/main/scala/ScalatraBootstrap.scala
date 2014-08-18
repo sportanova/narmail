@@ -19,7 +19,12 @@ class ScalatraBootstrap extends LifeCycle {
   val client = SimpleClient();
 
   override def init(context: ServletContext) {
-    client.connect("127.0.0.1"); // 54.183.164.178       127.0.0.1    // eip 54.183.66.201
+    val cass_ip = sys.env.get("cassandra_cluster_ip") match {
+      case Some(ip) => ip
+      case None => "127.0.0.1"
+    }
+
+    client.connect("54.183.66.201"); // 54.183.164.178       127.0.0.1    // eip 54.183.66.201
     client.setKeyspace("app")
     client.createSchema();
 
