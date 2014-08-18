@@ -39,12 +39,12 @@ class AccessTokenActor extends Actor {
   def receive = {
     // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
     case AddGmailAccount(userId, accessCode) => {
-      println(s"############### userId $userId")
-      println(s"############### accessCode $accessCode")
-      val tokens = getGmailAccessToken(accessCode.get)
-      println(s"############### tokens ${tokens}")
-      val email = getGmailAddress(tokens.get.get("accessToken").get)
-      println(s"############### email ${email}")
+//      println(s"############### userId $userId")
+//      println(s"############### accessCode $accessCode")
+//      val tokens = getGmailAccessToken(accessCode.get)
+//      println(s"############### tokens ${tokens}")
+//      val email = getGmailAddress(tokens.get.get("accessToken").get)
+//      println(s"############### email ${email}")
       val newAccount = (for {
         id <- userId
         ac <- accessCode
@@ -103,6 +103,7 @@ class AccessTokenActor extends Actor {
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(redirectURL, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
     val json = Await.result(req.apply, 10.second).toJValue
+    println(s"########### json $json")
 
     for {
       body <- json.values.asInstanceOf[Map[String,Any]].get("body")
