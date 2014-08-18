@@ -13,6 +13,11 @@ object TextmailerBuild extends Build {
   val ScalatraVersion = "2.2.2"
   val port = SettingKey[Int]("port")
   val Conf = config("container")
+  
+  val portNum = sys.env.get("generalServerPort") match {
+    case Some(p) => p.toInt
+    case None => 8080
+  }
 
   lazy val project = Project (
     "textmailer",
@@ -38,7 +43,7 @@ object TextmailerBuild extends Build {
         "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106" % "container",
         "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "container;provided;test" artifacts (Artifact("javax.servlet", "jar", "jar"))
       ),
-      port in Conf := 8080,
+      port in Conf := portNum,
       parallelExecution in Test := false,
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(
