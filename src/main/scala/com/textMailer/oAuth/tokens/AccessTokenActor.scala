@@ -68,7 +68,7 @@ class AccessTokenActor extends Actor {
       sender ! refreshedAccounts.map(acc => {
         acc match {
           case Success(a) => s"Successfully updated ${a.id} email account"
-          case Failure(ex) => s"Failed to update account for user $userId"
+          case Failure(ex) => s"Failed to update account for user: $userId . Reason: $ex"
         }
       })
     }

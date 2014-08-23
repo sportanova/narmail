@@ -63,7 +63,7 @@ class SimpleClient() {
       "bcc text," + // move to conversation? And add "to"
       "text_body text," +
       "html_body text," +
-      "PRIMARY KEY((user_id, thread_id), time, id)" + // todo: make this idempotent, add hash of text body to row key?
+      "PRIMARY KEY((user_id, thread_id), time, id)" + // be email timestamp, not server timestamp
     ");")
     
     session.execute(
@@ -100,13 +100,40 @@ class SimpleClient() {
         "PRIMARY KEY(user_id, recipients_hash)" +
     ");")
     
+    // index table listing all topics / conversations in the order they came???
+    //    session.execute(
+//      s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_or_topics_by_time (" +
+//        "user_id text," +
+//        "conv_or_top text," + // <'conversation' || 'topic'>
+//        "ts timestamp," +
+//        "attrs Map<text,text>," + // attributes - queryable primary key && denormalized data
+//        "PRIMARY KEY((user_id, index_category), ts)" +
+//    ");")
+    
+    //TABLE COMBINING EVERYTHING?
+//    session.execute(
+//      s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
+//        "user_id text," +
+//        "recipients_hash text," +
+//        "thread_id bigint," +
+//        "email_id text," +
+//        "ts timestamp," +
+//        "text_body text," +
+//        "html_body text," +
+//        "email_info Map<text,text>," + // subject, recipients, sender, cc, bcc
+//        "PRIMARY KEY(user_id, recipients_hash, thread_id, email_id, ts)" +
+//    ");")
+    
+    // TODO: unique conversations / topics index table - list the uniques, no duplicates???
+    // "PRIMARY KEY(user_id, index_category <conversation || topic>, Map<primary key values>)" - no timestamp in primary key
+    
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.topics_by_conversation (" +
         "user_id text," +
         "recipients_hash text," +
         "thread_id bigint," +
         "subject text," +
-        "PRIMARY KEY((user_id, recipients_hash), thread_id)" + // add subject to compound, and get first one? would keep subject from getting mangled with Re:re:re:
+        "PRIMARY KEY((user_id, recipients_hash), thread_id)" +
     ");")
       
       // user => conversation => topic => email

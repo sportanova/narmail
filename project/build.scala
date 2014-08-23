@@ -35,6 +35,7 @@ object TextmailerBuild extends Build {
         "ch.qos.logback" % "logback-classic" % "1.0.6" % "runtime",
         "org.scalatra" %% "scalatra-scalatest" % "2.2.2" % "test",
     		"org.scalatra" %% "scalatra-json" % "2.2.2",
+    		"net.jpountz.lz4" % "lz4" % "1.2.0",
     		"org.json4s"   %% "json4s-jackson" % "3.2.6",
         "com.stackmob" %% "newman" % "1.3.5",
         "com.datastax.cassandra" % "cassandra-driver-core" % "2.0.2",

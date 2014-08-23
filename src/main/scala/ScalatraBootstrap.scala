@@ -25,7 +25,7 @@ class ScalatraBootstrap extends LifeCycle {
     }
 
     client.connect(cass_ip); // 54.183.164.178       127.0.0.1    // eip 54.183.66.201
-    client.setKeyspace("app")
+    client.setKeyspace("narmal_app")
     client.createSchema();
 
     context.mount(new TextMailerServlet, "/*")

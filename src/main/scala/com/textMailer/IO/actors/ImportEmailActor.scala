@@ -149,30 +149,21 @@ class ImportEmailActor extends Actor {
             }
             println(s"!!!!!!!!!!!! subject: $subject")
             
+            // TODO: make sorted set! - treeset
             val recipients = to ++ bcc ++ cc - emailAddress + sender
             println(s"@@@@@@@@@@@ recipientsSet $recipients")
             val recipientsString = recipients.toString
             println(s"@@@@@@@@@@@ recipientsString $recipientsString")
             val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
-            
+            val ts = m.getSentDate().toString
+            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
             val conversation = Conversation(userId, recipientsHash, recipients)
             ConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject)
             TopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, "time", subject, sender, "cc", "bcc", text, html)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
-            
-//            name.replaceAll("[^\\p{L}\\p{Nd}]", "").replaceAll(" ", "").toLowerCase
-            
-//            val statement = s"INSERT INTO simplex.imported_emails (user_id, subject, recipients_string, time, recipients, cc, bcc, body) VALUES (uuid, subject, recipients_string, n, recipients, cc, bcc, text);"
-
-//           println(s"######### statement $statement")
-//            client.session.execute(statement);
-//            println(s"<<<<<<<<<<<< subject ${m.getSubject()}")
-//            println(s"<<<<<<<<<<<< body ${m.getContent()}")
-            a += 1;
-//            println(s"<<<<<<<<<<< count $a")
           })
   }
   
