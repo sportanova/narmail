@@ -26,6 +26,7 @@ import com.sun.mail.imap.IMAPMessage
 import com.sun.mail.gimap.GmailFolder
 import com.sun.mail.gimap.GmailSSLStore
 import com.textMailer.models.Topic
+import com.textMailer.Implicits.ImplicitConversions._
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])  
@@ -73,7 +74,7 @@ class ImportEmailActor extends Actor {
 
     val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
     println(s"####### before date")
-    val date = (new DateTime).minusDays(1).toDate()
+    val date = (new DateTime).minusDays(20).toDate()
     val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
 
 
@@ -156,13 +157,13 @@ class ImportEmailActor extends Actor {
             println(s"@@@@@@@@@@@ recipientsString $recipientsString")
             val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
-            val ts = m.getSentDate().toString
+            val ts = m.getSentDate().getMillis
             println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-            val conversation = Conversation(userId, recipientsHash, recipients)
+            val conversation = Conversation(userId, recipientsHash, recipients, ts)
             ConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject)
             TopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts.toString, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
           })
   }

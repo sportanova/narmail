@@ -10,6 +10,7 @@ import com.textMailer.routes.ConversationRoutes
 import com.textMailer.IO.actors.ConversationActor
 import com.textMailer.models.Conversation
 import com.textMailer.IO.ConversationIO
+import org.joda.time.DateTime
 
 class ConversationRoutesSpec extends MutableScalatraSpec {
   val prepare = PrepareData()
@@ -24,13 +25,14 @@ class ConversationRoutesSpec extends MutableScalatraSpec {
     "get conversations for a user" in {
       val user = User("someId", "Stephen", "Portanova", "PASSWORD")
       val writtenUser = UserIO().write(user)
-      ConversationIO().write(Conversation(user.id, "peter@gmail.com", Set("peter@gmail.com")))
-      ConversationIO().write(Conversation(user.id, "stephen@gmail.com", Set("stephen@gmail.com")))
+      val ts = {new DateTime}.getMillis
+      ConversationIO().write(Conversation(user.id, "peter@gmail.com", Set("peter@gmail.com"), ts))
+      ConversationIO().write(Conversation(user.id, "stephen@gmail.com", Set("stephen@gmail.com"), ts))
 
       get(s"/${user.id}") {
         status must_== 200
         val res = response.body
-        res === """[{"userId":"someId","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"]},{"userId":"someId","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"]}]"""
+        res === s"""[{"userId":"someId","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"],"ts":$ts},{"userId":"someId","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"],"ts":$ts}]"""
       }
     }
   }

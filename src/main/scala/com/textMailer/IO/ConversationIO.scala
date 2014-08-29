@@ -12,6 +12,7 @@ import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import scala.util.Try
 import scala.concurrent.Future
+import com.textMailer.Implicits.ImplicitConversions._
 
 object ConversationIO {
   val client = SimpleClient()
@@ -49,14 +50,15 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
     val userId = row.getString("user_id")
     val recipientsHash = row.getString("recipients_hash")
     val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String]
+    val ts = row.getLong("ts")
     
-    Conversation(userId, recipientsHash, recipients)
+    Conversation(userId, recipientsHash, recipients, ts)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.conversations_by_user " +
-    "(user_id,recipients_hash, recipients) " +
-    "VALUES (?, ?, ?);");
+    "(user_id,recipients_hash, recipients, ts) " +
+    "VALUES (?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -66,11 +68,13 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
   
   def break(conversation: Conversation, boundStatement: BoundStatement): BoundStatement = {
 //    val set: java.util.Set[String] = conversation.recipients
+    val date = conversation.ts
 
     boundStatement.bind(
       conversation.userId,
       conversation.recipientsHash,
-      setAsJavaSet(conversation.recipients)
+      setAsJavaSet(conversation.recipients),
+      conversation.ts.asInstanceOf[java.lang.Long]
     )
   }
 }

@@ -97,7 +97,17 @@ class SimpleClient() {
         "user_id text," +
         "recipients_hash text," +
         "recipients Set<text>," +
+        "ts bigint," +
         "PRIMARY KEY(user_id, recipients_hash)" +
+    ");")
+    
+    session.execute(
+      s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_conversations (" +
+        "user_id text," +
+        "recipients_hash text," +
+        "recipients Set<text>," +
+        "ts timestamp," +
+        "PRIMARY KEY((user_id, recipients_hash), ts)" +
     ");")
     
     // index table listing all topics / conversations in the order they came???

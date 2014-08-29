@@ -36,7 +36,7 @@ class ImportEmailRoutes (system: ActorSystem, importEmailActor: ActorRef) extend
   protected implicit def executor: ExecutionContext = system.dispatcher
 
   import _root_.akka.pattern.ask
-  implicit val defaultTimeout = Timeout(10000) 
+  implicit val defaultTimeout = Timeout(100000) 
 
   get("/:userId") {
     val userId = params.get("userId")
