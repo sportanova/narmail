@@ -11,7 +11,7 @@ import com.textMailer.IO.ConversationIO
 import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import com.textMailer.IO.actors.ConversationActor._
-
+import com.textMailer.Implicits.ImplicitConversions._
 
 class ConversationRoutes(system: ActorSystem, conversationActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats
@@ -27,6 +27,13 @@ class ConversationRoutes(system: ActorSystem, conversationActor: ActorRef) exten
   get("/:userId") {
     val userId = params.getOrElse("userId", "no userId")
     val conversations = conversationActor ? GetConversationsByUser(userId)
+    new AsyncResult { val is = conversations }
+  }
+  
+  get("/ordered/:userId") {
+    val userId = params.getOrElse("userId", "no userId")
+    val ts = params.get("ts")
+    val conversations = conversationActor ? GetOrderedConversationsByUser(userId, ts)
     new AsyncResult { val is = conversations }
   }
 }

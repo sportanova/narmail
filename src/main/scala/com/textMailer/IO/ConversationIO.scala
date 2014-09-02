@@ -16,12 +16,17 @@ import com.textMailer.Implicits.ImplicitConversions._
 
 object ConversationIO {
   val client = SimpleClient()
-  private lazy val conversationIO = new ConversationIO(client)
+  private lazy val conversationIO = new ConversationIO(client, "conversations_by_user")
   def apply() = conversationIO 
 }
 
-class ConversationIO(client: SimpleClient) extends QueryIO {
-  val table = "conversations_by_user"
+object OrdConversationIO {
+  val client = SimpleClient()
+  private lazy val conversationIO = new ConversationIO(client, "ordered_conversations_by_user")
+  def apply() = conversationIO 
+}
+
+class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
   val session = client.getSession
   val keyspace = client.getKeyspace
 
@@ -56,7 +61,7 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
   }
   
   val preparedStatement = session.prepare(
-    s"INSERT INTO $keyspace.conversations_by_user " +
+    s"INSERT INTO $keyspace.$table " +
     "(user_id,recipients_hash, recipients, ts) " +
     "VALUES (?, ?, ?, ?);");
   

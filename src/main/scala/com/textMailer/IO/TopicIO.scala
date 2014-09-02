@@ -16,12 +16,17 @@ import scala.concurrent.Future
 
 object TopicIO {
   val client = SimpleClient()
-  private lazy val topicIO = new TopicIO(client)
+  private lazy val topicIO = new TopicIO(client, "topics_by_conversation")
   def apply() = topicIO 
 }
 
-class TopicIO(client: SimpleClient) extends QueryIO {
-  val table = "topics_by_conversation"
+object OrdTopicIO {
+  val client = SimpleClient()
+  private lazy val topicIO = new TopicIO(client, "ordered_topics_by_conversation")
+  def apply() = topicIO 
+}
+
+class TopicIO(client: SimpleClient, table: String) extends QueryIO {
   val session = client.getSession
   val keyspace = client.getKeyspace
 
@@ -57,7 +62,7 @@ class TopicIO(client: SimpleClient) extends QueryIO {
   }
   
   val preparedStatement = session.prepare(
-    s"INSERT INTO $keyspace.topics_by_conversation " +
+    s"INSERT INTO $keyspace.$table " +
     "(user_id, recipients_hash, thread_id, subject, ts) " +
     "VALUES (?, ?, ?, ?, ?);");
   

@@ -27,6 +27,8 @@ import com.sun.mail.gimap.GmailFolder
 import com.sun.mail.gimap.GmailSSLStore
 import com.textMailer.models.Topic
 import com.textMailer.Implicits.ImplicitConversions._
+import scala.collection.immutable.TreeSet
+import scala.collection.immutable.SortedSet
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])  
@@ -89,7 +91,6 @@ class ImportEmailActor extends Actor {
           messages.map(m => {
             val gm = m.asInstanceOf[GmailMessage]
             val body = getText(m)
-            println(s"!!!!!!!!!!!!!!!!!!!!! body $body")
             val text = (for{
               textValue <- body.get("text")
               text <- textValue
@@ -106,8 +107,8 @@ class ImportEmailActor extends Actor {
               case None => ""
             }
             
-            println(s"<<<<<<<<<<<< text $text")
-            println(s"<<<<<<<<<<<< html $html")
+//            println(s"<<<<<<<<<<<< text $text")
+//            println(s"<<<<<<<<<<<< html $html")
 
             val emailId = UUIDs.random
             
@@ -118,7 +119,7 @@ class ImportEmailActor extends Actor {
               case Array() => ""
               case a => InternetAddress.parse(a(0).toString)(0).getAddress
             }
-            println(s"################### sender $sender")
+//            println(s"################### sender $sender")
             
             // TODO: should to cc and bcc be Sets?
             
@@ -140,9 +141,9 @@ class ImportEmailActor extends Actor {
               case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
             }
 
-            println(s"################### to ${to}")
-            println(s"################### cc ${cc}")
-            println(s"################### bcc $bcc")
+//            println(s"################### to ${to}")
+//            println(s"################### cc ${cc}")
+//            println(s"################### bcc $bcc")
 
             val subject = m.getSubject() match {
               case null => "no_subject"
@@ -150,19 +151,20 @@ class ImportEmailActor extends Actor {
             }
             println(s"!!!!!!!!!!!! subject: $subject")
             
-            // TODO: make sorted set! - treeset
-            val recipients = to ++ bcc ++ cc - emailAddress + sender
+            val recipients = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
             println(s"@@@@@@@@@@@ recipientsSet $recipients")
             val recipientsString = recipients.toString
             println(s"@@@@@@@@@@@ recipientsString $recipientsString")
             val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
             val ts = m.getSentDate().getMillis
-            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+//            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
             val conversation = Conversation(userId, recipientsHash, recipients, ts)
             ConversationIO().write(conversation)
+            OrdConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject, ts)
             TopicIO().write(topic)
+            OrdTopicIO().write(topic)
             val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts.toString, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
           })

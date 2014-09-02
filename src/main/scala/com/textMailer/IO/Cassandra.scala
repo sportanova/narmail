@@ -108,7 +108,7 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "PRIMARY KEY((user_id), ts)" +
-    ");")
+    ") with clustering order by (ts desc);")
     
     // index table listing all topics / conversations in the order they came???
     //    session.execute(
@@ -155,7 +155,7 @@ class SimpleClient() {
         "subject text," +
         "ts bigint," +
         "PRIMARY KEY((user_id), ts, thread_id)" +
-    ");")
+    ") with clustering order by (ts desc);")
       
       // user => conversation => topic => email
     

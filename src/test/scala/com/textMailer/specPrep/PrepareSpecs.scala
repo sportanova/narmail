@@ -24,10 +24,11 @@ class PrepareData() {
     client.dropTable("users")
     client.dropTable("emails_by_topic")
     client.dropTable("conversations_by_user")
+    client.dropTable("ordered_conversations_by_user")
     client.dropTable("new_emails_index")
     client.dropTable("index_1")
     client.dropTable("email_accounts")
     client.dropTable("topics_by_conversation")
-    client.dropTable("ordered_conversation")
+    client.dropTable("ordered_topics_by_conversation")
   }
 }
