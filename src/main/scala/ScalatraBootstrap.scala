@@ -10,6 +10,8 @@ import scala.concurrent.duration.Duration;
 import java.util.concurrent.TimeUnit;
 
 class ScalatraBootstrap extends LifeCycle {
+  val client = SimpleClient();
+
   val system = ActorSystem()
   val emailActor = system.actorOf(Props[EmailActor])
   val conversationActor = system.actorOf(Props[ConversationActor])
@@ -19,12 +21,9 @@ class ScalatraBootstrap extends LifeCycle {
   val topicActor = system.actorOf(Props[TopicActor])
   val scheduledEmailActor = system.actorOf(Props[ScheduledEmailActor])
   
-  implicit val context = system.dispatcher
-  system.scheduler.schedule(Duration.Zero, Duration.create(4000, TimeUnit.MILLISECONDS), scheduledEmailActor, "foo");
-  
-  val client = SimpleClient();
 
   override def init(context: ServletContext) {
+
     val cass_ip = System.getProperty("general_cassandra_cluster_ip") match {
       case ip: String => ip
       case null => "127.0.0.1"
@@ -33,6 +32,9 @@ class ScalatraBootstrap extends LifeCycle {
     client.connect(cass_ip); // 127.0.0.1    // eip 54.183.66.201
     client.setKeyspace("app")
     client.createSchema();
+    
+    implicit val execContext = system.dispatcher
+    system.scheduler.schedule(Duration.Zero, Duration.create(900000, TimeUnit.MILLISECONDS), importEmailActor, "importEmails");
 
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")

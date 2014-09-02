@@ -10,10 +10,12 @@ import scala.collection.JavaConverters._
 import com.textMailer.models.Conversation
 import com.datastax.driver.core.ResultSet
 import com.textMailer.models.User
+import com.textMailer.models.UserEvent
 import scala.util.Try
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.utils.UUIDs
 import scala.concurrent.Future
+import org.joda.time.DateTime
 
 object UserIO {
   val client = SimpleClient()
@@ -64,7 +66,15 @@ class UserIO(client: SimpleClient) extends QueryIO {
     curriedWrite(user)
   }
   
+  def preWrite(user: User): Unit = {
+    val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
+    val userEvent = UserEvent(fake_uuid, "userSignup", new DateTime().getMillis, Map("userId" -> user.id))
+    UserEventIO().write(userEvent)
+  }
+  
   def break(user: User, boundStatement: BoundStatement): BoundStatement = {
+    preWrite(user) // TODO: add unit test
+
     boundStatement.bind(
       user.id,
       user.firstName,

@@ -19,7 +19,7 @@ class UserEventIOSpec extends MutableScalatraSpec {
   "UserEventIO.write" should {
     "write to the db" in {
       val userId = UUIDs.random
-      val userEvent = UserEvent(userId, "importEmails", 4534535l)
+      val userEvent = UserEvent(userId, "importEmails", 4534535l, Map())
       val writtenUserEvent = UserEventIO().write(userEvent)
       val foundUserEvents = UserEventIO().find(List(Eq("user_id",userId), Eq("event_type","importEmails")), 10)
       foundUserEvents.headOption.get.userId === userId

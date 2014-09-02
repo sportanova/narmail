@@ -2,6 +2,7 @@ package com.textMailer.IO.actors
 
 import akka.actor.{ActorRef, Actor, ActorSystem}
 import com.textMailer.IO.EmailIO
+import com.textMailer.IO.UserEventIO
 import javax.mail.Folder
 import javax.mail.Message
 import javax.mail.Multipart
@@ -29,15 +30,28 @@ import com.textMailer.models.Topic
 import com.textMailer.Implicits.ImplicitConversions._
 import scala.collection.immutable.TreeSet
 import scala.collection.immutable.SortedSet
+import com.textMailer.models.UserEvent
 
 object ImportEmailActor {
-  case class ImportEmail(userId: Option[String])  
+  case class ImportEmail(userId: Option[String])
+  case class RecurringEmailImport
 }
 
 class ImportEmailActor extends Actor {
   import com.textMailer.IO.actors.ImportEmailActor._
   // TODO: make this actor into it's own service, that consumes a user id from a queue
   def receive = {
+    case "importEmails" => { // TODO: add unit test??
+      val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
+      val userEvents = UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000)
+      
+      (for {
+        userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
+        emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
+      } yield(emailAccount)).map(ea => {
+        importGmail(ea.userId, ea.username, ea.accessToken)
+      })
+    }
     case ImportEmail(userId) => { // TODO: Add time as param, so can continually get latest, unchecked emails??
       val emailAccounts = userId match {
         case Some(userId) => {
@@ -52,7 +66,7 @@ class ImportEmailActor extends Actor {
         }
         case None => None
       }
-      sender ! emailAccounts
+      sender ! emailAccounts // why am i sending this back?
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
@@ -68,21 +82,28 @@ class ImportEmailActor extends Actor {
    props.put("mail.imap.auth.login.disable", "true");
    props.put("mail.imap.auth.plain.disable", "true");
 
-    val session = Session.getInstance(props)
+   val session = Session.getInstance(props)
 
-    val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
-    println(s"####### before connect")
-    store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
+   val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
+   println(s"####### before connect")
+   store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
 
-    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
-    println(s"####### before date")
-    val date = (new DateTime).minusDays(20).toDate()
-    val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
+   val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
+
+   val currentDateTime = new DateTime
+   val lastEmailUpdateTime = UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption match {
+     case Some(ue) => new DateTime(ue.ts).toDate
+     case None => (currentDateTime).minusDays(2).toDate
+   }
+   
+//   println(s"########### lastEmailUpdateTime $lastEmailUpdateTime")
+
+   val fetchEmailsNewerThanDate = new ReceivedDateTerm(ComparisonTerm.GT, lastEmailUpdateTime);
 
 
 //          if(!folder.isOpen())
           folder.open(Folder.READ_WRITE);
-          val messages = folder.search(olderThan)
+          val messages = folder.search(fetchEmailsNewerThanDate)
           // folder.getMessages()
           var a = 0;
           
@@ -90,6 +111,8 @@ class ImportEmailActor extends Actor {
 
           messages.map(m => {
             val gm = m.asInstanceOf[GmailMessage]
+            val uid = folder.getUID(gm)
+            println(s"########## uid $uid")
             val body = getText(m)
             val text = (for{
               textValue <- body.get("text")
@@ -158,7 +181,7 @@ class ImportEmailActor extends Actor {
             val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
             val ts = m.getSentDate().getMillis
-//            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
             val conversation = Conversation(userId, recipientsHash, recipients, ts)
             ConversationIO().write(conversation)
             OrdConversationIO().write(conversation)
@@ -168,6 +191,9 @@ class ImportEmailActor extends Actor {
             val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts.toString, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
           })
+
+    folder.close(false)
+    val userEvent = UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map()))
   }
   
   def md5Hash(str: String) = {

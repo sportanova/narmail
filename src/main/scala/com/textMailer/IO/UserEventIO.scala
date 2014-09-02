@@ -15,6 +15,7 @@ import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.utils.UUIDs
 import scala.concurrent.Future
 import com.textMailer.models.UserEvent
+import collection.JavaConversions._
 
 object UserEventIO {
   val client = SimpleClient()
@@ -49,14 +50,16 @@ class UserEventIO(client: SimpleClient) extends QueryIO {
     val userId = row.getUUID("user_id")
     val eventType = row.getString("event_type")
     val ts = row.getLong("ts")
+    val str: java.lang.String = ""
+    val data: Map[String,String] = row.getMap("data", str.getClass, str.getClass).toMap
     
-    UserEvent(userId, eventType, ts)
+    UserEvent(userId, eventType, ts, data)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(user_id, event_type, ts) " +
-    "VALUES (?, ?, ?);");
+    "(user_id, event_type, ts, data) " +
+    "VALUES (?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -70,7 +73,8 @@ class UserEventIO(client: SimpleClient) extends QueryIO {
     boundStatement.bind(
       userEvent.userId,
       userEvent.eventType,
-      ts
+      ts,
+      mapAsJavaMap(userEvent.data)
     )
   }
 }

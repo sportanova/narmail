@@ -5,5 +5,6 @@ import java.util.UUID
 case class UserEvent (
   userId: UUID,
   eventType: String,
-  ts: Long
+  ts: Long,
+  data: Map[String,String]
 ) extends Model
