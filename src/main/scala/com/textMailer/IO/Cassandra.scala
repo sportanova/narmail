@@ -102,12 +102,12 @@ class SimpleClient() {
     ");")
     
     session.execute(
-      s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_conversations (" +
+      s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_conversations_by_user (" +
         "user_id text," +
         "recipients_hash text," +
         "recipients Set<text>," +
-        "ts timestamp," +
-        "PRIMARY KEY((user_id, recipients_hash), ts)" +
+        "ts bigint," +
+        "PRIMARY KEY((user_id), ts)" +
     ");")
     
     // index table listing all topics / conversations in the order they came???
@@ -143,10 +143,25 @@ class SimpleClient() {
         "recipients_hash text," +
         "thread_id bigint," +
         "subject text," +
+        "ts bigint," +
         "PRIMARY KEY((user_id, recipients_hash), thread_id)" +
+    ");")
+    
+    session.execute(
+      s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_topics_by_conversation (" +
+        "user_id text," +
+        "recipients_hash text," +
+        "thread_id bigint," +
+        "subject text," +
+        "ts bigint," +
+        "PRIMARY KEY((user_id), ts, thread_id)" +
     ");")
       
       // user => conversation => topic => email
+    
+//    insert into users (id, first_name, last_name, password) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', 'stephen', 'portanova', 'pw');
+
+//    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
   }
   
   def dropKeyspace(keyspace: String): Unit = {

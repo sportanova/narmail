@@ -32,7 +32,7 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       val writtenUser = UserIO().write(user)
       val recipientsHash = "dasfasfasfasd"
       val threadId = 4534535l
-      TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1"))
+      TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1", 1l))
       val email1 = Email("someEmId1", "someId", threadId, recipientsHash, "time", "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
       val email2 = Email("someEmId2", "someId", threadId, recipientsHash, "time1", "subject1", "sender2", "cc", "bcc", "emailBodyText", "emailBodyHtml")
       EmailIO().write(email1)

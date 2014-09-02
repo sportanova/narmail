@@ -15,7 +15,7 @@ class TopicIOSpec extends MutableScalatraSpec {
 
   "TopicIO.write" should {
     "write to the db" in {
-      val topic = Topic("someUserId", "sportano@gmail.com", 4534535l, "subject1")
+      val topic = Topic("someUserId", "sportano@gmail.com", 4534535l, "subject1", 1l)
       val writtenTopic = TopicIO().write(topic)
       val foundTopics = TopicIO().find(List(Eq("user_id","someUserId"), Eq("recipients_hash","sportano@gmail.com")), 10)
       foundTopics.headOption.get.userId === "someUserId"

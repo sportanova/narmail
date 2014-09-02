@@ -67,7 +67,6 @@ class ConversationIO(client: SimpleClient) extends QueryIO {
   }
   
   def break(conversation: Conversation, boundStatement: BoundStatement): BoundStatement = {
-//    val set: java.util.Set[String] = conversation.recipients
     val date = conversation.ts
 
     boundStatement.bind(

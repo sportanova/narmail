@@ -36,10 +36,9 @@ class AccessTokenActor extends Actor {
   implicit val httpClient = new ApacheHttpClient
   
   val gmailOauthRedirect = System.getProperty("gmail_oauth_redirect") match {
-      case redirect: String => redirect
-      case null => "http://localhost:8080/oauth/oauth2callback"
-    }
-  
+    case redirect: String => redirect
+    case null => "http://localhost:8080/oauth/oauth2callback"
+  }
 
   def receive = {
     // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account

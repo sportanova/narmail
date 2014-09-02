@@ -161,7 +161,7 @@ class ImportEmailActor extends Actor {
             println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
             val conversation = Conversation(userId, recipientsHash, recipients, ts)
             ConversationIO().write(conversation)
-            val topic = Topic(userId, recipientsHash, threadId, subject)
+            val topic = Topic(userId, recipientsHash, threadId, subject, ts)
             TopicIO().write(topic)
             val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts.toString, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)

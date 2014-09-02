@@ -51,14 +51,15 @@ class TopicIO(client: SimpleClient) extends QueryIO {
     val recipientsHash = row.getString("recipients_hash")
     val threadId = row.getLong("thread_id")
     val subject = row.getString("subject")
+    val ts = row.getLong("ts")
     
-    Topic(id, recipientsHash, threadId, subject)
+    Topic(id, recipientsHash, threadId, subject, ts)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.topics_by_conversation " +
-    "(user_id, recipients_hash, thread_id, subject) " +
-    "VALUES (?, ?, ?, ?);");
+    "(user_id, recipients_hash, thread_id, subject, ts) " +
+    "VALUES (?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -69,12 +70,14 @@ class TopicIO(client: SimpleClient) extends QueryIO {
   def break(topic: Topic, boundStatement: BoundStatement): BoundStatement = {
 //    val set: java.util.Set[String] = conversation.recipients
     val threadId: java.lang.Long = topic.threadId
+    val ts: java.lang.Long = topic.ts
 
     boundStatement.bind(
       topic.userId,
       topic.recipientsHash,
       threadId,
-      topic.subject
+      topic.subject,
+      ts
     )
   }
 }

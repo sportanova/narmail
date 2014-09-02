@@ -6,5 +6,6 @@ case class Topic (
   userId: String,
   recipientsHash: String,
   threadId: Long,
-  subject: String
+  subject: String,
+  ts: Long
 ) extends Model
