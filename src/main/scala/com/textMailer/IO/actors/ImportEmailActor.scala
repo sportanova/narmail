@@ -36,9 +36,9 @@ object ImportEmailActor {
 
 class ImportEmailActor extends Actor {
   import com.textMailer.IO.actors.ImportEmailActor._
-  // TODO: differentiate between first import and routine imports. Routine imports should go by date, rather than int range?
+  // TODO: make this actor into it's own service, that consumes a user id from a queue
   def receive = {
-    case ImportEmail(userId) => {
+    case ImportEmail(userId) => { // TODO: Add time as param, so can continually get latest, unchecked emails??
       val emailAccounts = userId match {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {

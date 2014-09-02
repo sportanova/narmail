@@ -30,5 +30,6 @@ class PrepareData() {
     client.dropTable("email_accounts")
     client.dropTable("topics_by_conversation")
     client.dropTable("ordered_topics_by_conversation")
+    client.dropTable("user_events")
   }
 }

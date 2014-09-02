@@ -6,6 +6,8 @@ import _root_.akka.actor.{ActorSystem, Props}
 import com.textMailer.IO.actors._
 import com.textMailer.oAuth.tokens.AccessTokenActor
 import com.textMailer.IO.SimpleClient
+import scala.concurrent.duration.Duration;
+import java.util.concurrent.TimeUnit;
 
 class ScalatraBootstrap extends LifeCycle {
   val system = ActorSystem()
@@ -15,6 +17,10 @@ class ScalatraBootstrap extends LifeCycle {
   val userActor = system.actorOf(Props[UserActor])
   val importEmailActor = system.actorOf(Props[ImportEmailActor])
   val topicActor = system.actorOf(Props[TopicActor])
+  val scheduledEmailActor = system.actorOf(Props[ScheduledEmailActor])
+  
+  implicit val context = system.dispatcher
+  system.scheduler.schedule(Duration.Zero, Duration.create(4000, TimeUnit.MILLISECONDS), scheduledEmailActor, "foo");
   
   val client = SimpleClient();
 

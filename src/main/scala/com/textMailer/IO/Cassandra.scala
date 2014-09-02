@@ -48,6 +48,8 @@ class SimpleClient() {
         "password text," +
       ");")
     
+      // TODO: shorten cf names to converations, topics, emails, etc.. 
+
       // TODO: Add timestamp as value
       // TODO: add email id from email?
     session.execute(
@@ -89,9 +91,8 @@ class SimpleClient() {
       "username text," +
       "access_token text," +
       "refresh_token text," +
-      "PRIMARY KEY(user_id, id));")
+      "PRIMARY KEY(user_id, id));") // TODO: make primary key based off of user_id + username?
 
-    // add timestamp to primary key?
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
         "user_id text," +
@@ -108,7 +109,7 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "PRIMARY KEY((user_id), ts)" +
-    ") with clustering order by (ts desc);")
+    ") with clustering order by (ts desc);") // TODO: add ttl
     
     // index table listing all topics / conversations in the order they came???
     //    session.execute(
@@ -154,8 +155,17 @@ class SimpleClient() {
         "thread_id bigint," +
         "subject text," +
         "ts bigint," +
-        "PRIMARY KEY((user_id), ts, thread_id)" +
-    ") with clustering order by (ts desc);")
+        "PRIMARY KEY((user_id, recipients_hash), ts, thread_id)" +
+    ") with clustering order by (ts desc);") // TODO: add ttl
+    
+    // for users joining, importing user's emails, updating user's refresh tokens
+    session.execute(
+      s"CREATE TABLE IF NOT EXISTS $keyspace.user_events (" +
+        "user_id uuid," +
+        "event_type text," +
+        "ts bigint," +
+        "PRIMARY KEY((user_id, event_type), ts)" +
+    ") with clustering order by (ts desc);") // TODO: add ttl
       
       // user => conversation => topic => email
     
