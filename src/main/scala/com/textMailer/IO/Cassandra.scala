@@ -58,15 +58,15 @@ class SimpleClient() {
       "user_id text," +
       "thread_id bigint," +
       "recipients_hash text," +
-      "time text," +
+      "ts bigint," +
       "subject text," +
       "sender text," +
       "cc text," + // TODO: move to conversation?
       "bcc text," + // move to conversation? And add "to"
       "text_body text," +
       "html_body text," +
-      "PRIMARY KEY((user_id, thread_id), time, id)" + // be email timestamp, not server timestamp
-    ");")
+      "PRIMARY KEY((user_id, thread_id), ts, id)" + // be email timestamp, not server timestamp
+    ") with clustering order by (ts desc);")
     
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.new_emails_index (" +

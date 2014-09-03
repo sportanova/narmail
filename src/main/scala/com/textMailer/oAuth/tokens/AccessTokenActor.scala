@@ -25,6 +25,7 @@ import com.textMailer.IO.EmailAccountIO
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import com.textMailer.IO.UserEventIO
 
 object AccessTokenActor {
   case class RefreshGmailAccessTokens(userId: String)
@@ -63,10 +64,19 @@ class AccessTokenActor extends Actor {
       
       sender ! newAccount
     }
+    case "recurringRefresh" => {
+      val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
+      
+      val results = (for {
+        userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
+        emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
+      } yield(emailAccount)).map(ea => {
+        refreshGmailAccessToken(ea)
+      })
+    }
     case RefreshGmailAccessTokens(userId) => {
       val refreshedAccounts = (for {
-        // TODO: MAKE THIS NOT GMAIL SPECIFIC. UPDATE ALL ACCOUNTS
-        ea <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
+        ea <- EmailAccountIO().find(List(Eq("user_id",userId)), 10) // TODO: MAKE THIS NOT GMAIL SPECIFIC. UPDATE ALL ACCOUNTS
         refreshedEA <- Some(refreshGmailAccessToken(ea))
       } yield(refreshedEA))
       sender ! refreshedAccounts.map(acc => {

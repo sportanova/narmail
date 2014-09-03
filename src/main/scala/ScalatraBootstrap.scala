@@ -34,7 +34,8 @@ class ScalatraBootstrap extends LifeCycle {
     client.createSchema();
     
     implicit val execContext = system.dispatcher
-    system.scheduler.schedule(Duration.Zero, Duration.create(900000, TimeUnit.MILLISECONDS), importEmailActor, "importEmails");
+    system.scheduler.schedule(Duration.Zero, Duration.create(900000, TimeUnit.MILLISECONDS), importEmailActor, "recurringImport");
+//    system.scheduler.schedule(Duration.Zero, Duration.create(3600000, TimeUnit.MILLISECONDS), accessTokenActor, "recurringRefresh");
 
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")

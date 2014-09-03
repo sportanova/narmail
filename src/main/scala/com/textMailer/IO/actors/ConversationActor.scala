@@ -30,9 +30,9 @@ class ConversationActor extends Actor {
       }
 
       (for {
-        convsersations <- OrdConversationIO().asyncFind(clauses, 100)
-      } yield {
-        convsersations.map(c => (c.recipientsHash, c)).toMap.map(_._2) // TODO: write a test
+        conversations <- OrdConversationIO().asyncFind(clauses, 5)
+      } yield { 
+        conversations.map(c => (c.recipientsHash, c)).toMap.map(_._2).toSeq.sortBy(c => (c.ts)).reverse  // TODO: write a test
       }) pipeTo sender
     }
     case _ => sender ! "Error: Didn't match case in ConversationActor"

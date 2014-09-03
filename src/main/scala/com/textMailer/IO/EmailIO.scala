@@ -49,18 +49,18 @@ class EmailIO(client: SimpleClient) extends QueryIO {
     val subject = row.getString("subject")
     val sender = row.getString("sender")
     val recipientsHash = row.getString("recipients_hash")
-    val time = row.getString("time")
+    val ts: java.lang.Long = row.getLong("ts")
     val cc = row.getString("cc")
     val bcc = row.getString("bcc")
     val textBody = row.getString("text_body")
     val htmlBody = row.getString("html_body")
     
-    Email(id, userId, threadId, recipientsHash, time, subject, sender, cc, bcc, textBody, htmlBody)
+    Email(id, userId, threadId, recipientsHash, ts, subject, sender, cc, bcc, textBody, htmlBody)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(id, user_id, thread_id, recipients_hash, time, subject, sender, cc, bcc, text_body, html_body) " +
+    "(id, user_id, thread_id, recipients_hash, ts, subject, sender, cc, bcc, text_body, html_body) " +
     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
@@ -71,13 +71,14 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   
   def break(email: Email, boundStatement: BoundStatement): BoundStatement = {
     val threadId: java.lang.Long = email.threadId
+    val ts: java.lang.Long = email.ts
 
     boundStatement.bind(
       email.id,
       email.userId,
       threadId,
       email.recipientsHash,
-      email.time,
+      ts,
       email.subject,
       email.sender,
       email.cc,

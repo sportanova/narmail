@@ -18,6 +18,7 @@ import java.util.Date
 import com.datastax.driver.core.BoundStatement
 import java.util.Properties
 import javax.mail.internet.InternetAddress
+import javax.mail.UIDFolder.LASTUID
 import com.textMailer.models.Conversation
 import java.security._
 import java.math.BigInteger
@@ -41,9 +42,8 @@ class ImportEmailActor extends Actor {
   import com.textMailer.IO.actors.ImportEmailActor._
   // TODO: make this actor into it's own service, that consumes a user id from a queue
   def receive = {
-    case "importEmails" => { // TODO: add unit test??
+    case "recurringImport" => { // TODO: add unit test??
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
-      val userEvents = UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000)
       
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
@@ -88,22 +88,28 @@ class ImportEmailActor extends Actor {
    println(s"####### before connect")
    store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
 
+   // get different folders??
    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
 
    val currentDateTime = new DateTime
-   val lastEmailUpdateTime = UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption match {
-     case Some(ue) => new DateTime(ue.ts).toDate
-     case None => (currentDateTime).minusDays(2).toDate
+   val lastEmailUid = UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption match {
+     case Some(ue) => ue.ts
+     case None => 14900l // TODO: change this
    }
+   
+   println(s"################### lastEmailUid $lastEmailUid")
    
 //   println(s"########### lastEmailUpdateTime $lastEmailUpdateTime")
 
-   val fetchEmailsNewerThanDate = new ReceivedDateTerm(ComparisonTerm.GT, lastEmailUpdateTime);
+//   val fetchEmailsNewerThanDate = new ReceivedDateTerm(ComparisonTerm.GT, lastEmailUpdateTime);
 
 
 //          if(!folder.isOpen())
           folder.open(Folder.READ_WRITE);
-          val messages = folder.search(fetchEmailsNewerThanDate)
+//          val messages = folder.search(fetchEmailsNewerThanDate)
+          val messages = folder.getMessagesByUID(lastEmailUid , LASTUID).toSeq
+          val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
+          println(s"@@@@@@@@@@@@@ newLastUID $newLastUID")
           // folder.getMessages()
           var a = 0;
           
@@ -181,19 +187,19 @@ class ImportEmailActor extends Actor {
             val recipientsHash = md5Hash(recipientsString)
             println(s"############## hashText $recipientsHash")
             val ts = m.getSentDate().getMillis
-            println(s"############## timestamp $ts \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+            println(s"############## timestamp $ts \n\n\n")
             val conversation = Conversation(userId, recipientsHash, recipients, ts)
             ConversationIO().write(conversation)
             OrdConversationIO().write(conversation)
             val topic = Topic(userId, recipientsHash, threadId, subject, ts)
             TopicIO().write(topic)
             OrdTopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts.toString, subject, sender, "cc", "bcc", text, html)
+            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
           })
 
     folder.close(false)
-    val userEvent = UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map()))
+    val userEvent = UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", newLastUID, Map()))
   }
   
   def md5Hash(str: String) = {

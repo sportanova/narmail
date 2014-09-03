@@ -7,7 +7,7 @@ case class Email (
   userId: String,
   threadId: Long,
   recipientsHash: String,
-  time: String,
+  ts: Long,
   subject: String,
   sender: String,
   cc: String,
