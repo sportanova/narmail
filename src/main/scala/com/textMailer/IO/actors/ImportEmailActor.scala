@@ -92,17 +92,12 @@ class ImportEmailActor extends Actor {
    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
 
    val currentDateTime = new DateTime
-   val lastEmailUid = UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption match {
-     case Some(ue) => 14900l // ue.ts
-     case None => 14900l // TODO: change this to something reasonable. how far back to we want to go for first time users?
-   }
+   val lastEmailUid = (for {
+     ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption
+     uid <- ue.data.get("uid")
+   } yield uid.toLong).getOrElse(14900l) // change this to something reasonable. how far back to we want to go for first time users?
    
    println(s"################### lastEmailUid $lastEmailUid")
-   
-//   println(s"########### lastEmailUpdateTime $lastEmailUpdateTime")
-
-//   val fetchEmailsNewerThanDate = new ReceivedDateTerm(ComparisonTerm.GT, lastEmailUpdateTime);
-
 
 //          if(!folder.isOpen())
           folder.open(Folder.READ_WRITE);
@@ -200,7 +195,7 @@ class ImportEmailActor extends Actor {
           })
 
     folder.close(false)
-    val userEvent = UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", newLastUID, Map()))
+    UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map("uid" -> newLastUID.toString)))
   }
   
   def md5Hash(str: String) = {

@@ -20,7 +20,7 @@ class ConversationActor extends Actor {
 
   def receive = {
     case GetConversationsByUser(userId) => {
-      val conversations = ConversationIO().asyncFind(List(Eq("user_id",userId)), 100)
+      val conversations = ConversationIO().asyncFind(List(Eq("user_id",userId)), 20)
       conversations pipeTo sender
     }
     case GetOrderedConversationsByUser(userId, time) => {
@@ -30,7 +30,7 @@ class ConversationActor extends Actor {
       }
 
       (for {
-        conversations <- OrdConversationIO().asyncFind(clauses, 5)
+        conversations <- OrdConversationIO().asyncFind(clauses, 20)
       } yield { 
         conversations.map(c => (c.recipientsHash, c)).toMap.map(_._2).toSeq.sortBy(c => (c.ts)).reverse  // TODO: write a test
       }) pipeTo sender

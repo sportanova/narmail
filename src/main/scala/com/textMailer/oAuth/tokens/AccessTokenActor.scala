@@ -26,6 +26,8 @@ import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
 import com.textMailer.IO.UserEventIO
+import com.textMailer.models.UserEvent
+import org.joda.time.DateTime
 
 object AccessTokenActor {
   case class RefreshGmailAccessTokens(userId: String)
@@ -42,14 +44,7 @@ class AccessTokenActor extends Actor {
   }
 
   def receive = {
-    // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
-    case AddGmailAccount(userId, accessCode) => {
-//      println(s"############### userId $userId")
-//      println(s"############### accessCode $accessCode")
-//      val tokens = getGmailAccessToken(accessCode.get)
-//      println(s"############### tokens ${tokens}")
-//      val email = getGmailAddress(tokens.get.get("accessToken").get)
-//      println(s"############### email ${email}")
+    case AddGmailAccount(userId, accessCode) => {  // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
       val newAccount = (for {
         id <- userId
         ac <- accessCode
@@ -71,7 +66,14 @@ class AccessTokenActor extends Actor {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
       } yield(emailAccount)).map(ea => {
-        refreshGmailAccessToken(ea)
+        (refreshGmailAccessToken(ea), ea.userId)
+      })
+      
+      results.map(r => {
+        r._1 match {
+          case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
+          case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString(r._2), "refreshToken", new DateTime().getMillis, Map("status" -> "failed")))// TODO: instead create error table and log this
+        }
       })
     }
     case RefreshGmailAccessTokens(userId) => {
@@ -116,7 +118,6 @@ class AccessTokenActor extends Actor {
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(gmailOauthRedirect, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
     val json = Await.result(req.apply, 10.second).toJValue
-    println(s"########### json $json")
 
     for {
       body <- json.values.asInstanceOf[Map[String,Any]].get("body")

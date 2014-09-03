@@ -19,8 +19,8 @@ import org.joda.time.DateTime
 
 object UserIO {
   val client = SimpleClient()
-  private lazy val UserIO = new UserIO(client)
-  def apply() = UserIO 
+  private lazy val userIO = new UserIO(client)
+  def apply() = userIO 
 }
 
 class UserIO(client: SimpleClient) extends QueryIO {

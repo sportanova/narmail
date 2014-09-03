@@ -6,7 +6,8 @@ import com.textMailer.IO.Eq
 import com.textMailer.IO.TopicIO
 
 object TopicActor {
-  case class GetTopicsByConversation(userId: String, recipientsHash: String)  
+  case class GetTopicsByConversation(userId: String, recipientsHash: String)
+  case class GetOrderedTopicsByConversation(userId: String, recipientsHash: String)
 }
 
 class TopicActor extends Actor {
@@ -18,6 +19,9 @@ class TopicActor extends Actor {
     case GetTopicsByConversation(userId, recipientsHash) => {
       val topics = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
       topics pipeTo sender
+    }
+    case GetOrderedTopicsByConversation(userId, recipientsHash) => {
+      
     }
     case _ => sender ! "Error: Didn't match case in TopicsActor"
   }

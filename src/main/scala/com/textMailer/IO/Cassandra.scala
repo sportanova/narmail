@@ -56,16 +56,16 @@ class SimpleClient() {
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
       "id bigint," +
       "user_id text," +
-      "thread_id bigint," +
+      "thread_id bigint," + // TODO: add account id?
       "recipients_hash text," +
       "ts bigint," +
       "subject text," +
       "sender text," +
-      "cc text," + // TODO: move to conversation?
-      "bcc text," + // move to conversation? And add "to"
+      "cc text," +
+      "bcc text," +
       "text_body text," +
       "html_body text," +
-      "PRIMARY KEY((user_id, thread_id), ts, id)" + // be email timestamp, not server timestamp
+      "PRIMARY KEY((user_id, thread_id), ts, id)" +
     ") with clustering order by (ts desc);")
     
     session.execute(
@@ -91,7 +91,7 @@ class SimpleClient() {
       "username text," +
       "access_token text," +
       "refresh_token text," +
-      "PRIMARY KEY(user_id, id));") // TODO: make primary key based off of user_id + username?
+      "PRIMARY KEY(user_id, id));") // TODO: start checking for access tokens from user_events cf? that way wouldn't keep updating / compactions
 
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
@@ -174,6 +174,7 @@ class SimpleClient() {
 
 //    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
+//    update email_accounts set access_token = 'ya29.dQDfY3IUnIQzYiIAAADVUFyBh0TIYur75RbZLR6lsaKKSuhtWzmgXqS88oZZED1W-XyCzdZS3lIZaHVjxHE' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
   }
   
   def dropKeyspace(keyspace: String): Unit = {
