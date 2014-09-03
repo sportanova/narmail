@@ -16,6 +16,7 @@ class EmailActor extends Actor {
 
   def receive = {
     case GetEmailsForTopic(userId, threadId) => {
+      println(s"######## userId $userId threadId:$threadId")
       val emails =  (for {
         uid <- userId
         tid <- threadId

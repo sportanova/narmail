@@ -54,7 +54,7 @@ class SimpleClient() {
       // TODO: add email id from email?
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
-      "id text," +
+      "id bigint," +
       "user_id text," +
       "thread_id bigint," +
       "recipients_hash text," +

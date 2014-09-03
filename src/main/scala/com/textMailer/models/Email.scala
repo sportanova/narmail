@@ -3,7 +3,7 @@ package com.textMailer.models
 import java.util.UUID
 
 case class Email (
-  id: String,
+  id: Long,
   userId: String,
   threadId: Long,
   recipientsHash: String,

@@ -93,8 +93,8 @@ class ImportEmailActor extends Actor {
 
    val currentDateTime = new DateTime
    val lastEmailUid = UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption match {
-     case Some(ue) => ue.ts
-     case None => 14900l // TODO: change this
+     case Some(ue) => 14900l // ue.ts
+     case None => 14900l // TODO: change this to something reasonable. how far back to we want to go for first time users?
    }
    
    println(s"################### lastEmailUid $lastEmailUid")
@@ -117,6 +117,7 @@ class ImportEmailActor extends Actor {
 
           messages.map(m => {
             val gm = m.asInstanceOf[GmailMessage]
+            val gmId = gm.getMsgId()
             val uid = folder.getUID(gm)
             println(s"########## uid $uid")
             val body = getText(m)
@@ -194,7 +195,7 @@ class ImportEmailActor extends Actor {
             val topic = Topic(userId, recipientsHash, threadId, subject, ts)
             TopicIO().write(topic)
             OrdTopicIO().write(topic)
-            val email = Email(UUIDs.random.toString, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
+            val email = Email(gmId, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
             EmailIO().write(email)
           })
 
