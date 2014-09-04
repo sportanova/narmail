@@ -174,7 +174,7 @@ class SimpleClient() {
 
 //    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
-//    update email_accounts set access_token = 'ya29.dQDfY3IUnIQzYiIAAADVUFyBh0TIYur75RbZLR6lsaKKSuhtWzmgXqS88oZZED1W-XyCzdZS3lIZaHVjxHE' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
+//    update email_accounts set access_token = 'ya29.dQBBdauuLLq_hyIAAACaBk9UiEhEOsfgW6Td99DtryDiCyODPDL7CQZfRSHc7QLN4kY6Tvn8y5nM6DxHs4Q' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
   }
   
   def dropKeyspace(keyspace: String): Unit = {
