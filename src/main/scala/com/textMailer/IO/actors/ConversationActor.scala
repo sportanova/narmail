@@ -9,6 +9,7 @@ import com.textMailer.IO.OrdConversationIO
 import com.textMailer.IO.Lt
 import com.textMailer.models.Model
 import com.textMailer.models.Conversation
+import com.textMailer.TypeClass.TypeClass.MostRecentItems
 
 object ConversationActor {
   case class GetConversationsByUser(userId: String)
@@ -32,17 +33,17 @@ class ConversationActor extends Actor {
       }
 
       (for {
-        conversations <- OrdConversationIO().asyncFind(clauses, 20)
-      } yield mostRecent("ts", conversations)) pipeTo sender  // TODO: write a test
+        conversations <- OrdConversationIO().asyncFind(clauses, 30)
+      } yield mostRecent(conversations)) pipeTo sender  // TODO: write a test
     }
     case _ => sender ! "Error: Didn't match case in ConversationActor"
   }
   
-  def mostRecent(prop: String, models: List[Conversation]) = { // if there are more than one models with the same property, take the one with the most recent timestamp
-    models.groupBy(_.recipientsHash).map(tuple => tuple match {
-      case t if t._2.size > 1 => t._2.reduceLeft((conv1, conv2) => if(conv1.ts > conv2.ts) conv1 else conv2) 
+  def mostRecent[T](models: List[T])(implicit model: MostRecentItems[T]): Seq[T] = { // if there are more than one models with the same property, take the one with the most recent timestamp
+    models.groupBy(item => model.member(item)).map(tuple => tuple match {
+      case t if t._2.size > 1 => t._2.reduceLeft((conv1, conv2) => if(model.ts(conv1) > model.ts(conv2)) conv1 else conv2) 
       case t => t._2.head
-    }).toSeq.sortBy(item => item.ts).reverse
+    }).toSeq.sortBy(item => model.ts(item)).reverse
   }
 }
 
