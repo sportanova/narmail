@@ -10,6 +10,7 @@ import org.json4s.Formats._
 import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import com.textMailer.IO.actors.TopicActor._
+import com.textMailer.Implicits.ImplicitConversions._
 
 
 class TopicRoutes(system: ActorSystem, topicActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
@@ -27,6 +28,14 @@ class TopicRoutes(system: ActorSystem, topicActor: ActorRef) extends ScalatraSer
     val userId = params.getOrElse("userId", "no userId")
     val recipientsHash = params.getOrElse("recipientsHash", "no recipientsHash")
     val topics = topicActor ? GetTopicsByConversation(userId, recipientsHash)
+    new AsyncResult { val is = topics }
+  }
+  
+  get("/ordered/:userId/:recipientsHash") {
+    val userId = params.getOrElse("userId", "no userId")
+    val recipientsHash = params.getOrElse("recipientsHash", "no recipientsHash")
+    val ts = params.get("ts")
+    val topics = topicActor ? GetOrderedTopicsByConversation(userId, recipientsHash, ts) // TODO: Better way - what if this can't convert to long?
     new AsyncResult { val is = topics }
   }
 }
