@@ -195,6 +195,7 @@ class ImportEmailActor extends Actor {
           })
 
     folder.close(false)
+    store.close()
     UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map("uid" -> newLastUID.toString)))
   }
   
