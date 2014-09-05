@@ -171,10 +171,12 @@ class SimpleClient() {
       // user => conversation => topic => email
     
 //    insert into users (id, first_name, last_name, password) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', 'stephen', 'portanova', 'pw');
+    // insert into ordered_conversations_by_user (user_id, recipients_hash, recipients, ts) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', 'supercalifrag', {'john', 'jacob'}, 1409965333000);
+    // delete from ordered_conversations_by_user where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND ts = 1409965333000;
 
 //    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
-//    update email_accounts set access_token = 'ya29.dQBBdauuLLq_hyIAAACaBk9UiEhEOsfgW6Td99DtryDiCyODPDL7CQZfRSHc7QLN4kY6Tvn8y5nM6DxHs4Q' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
+//    update email_accounts set access_token = 'ya29.dgD_DTqtZVovGiIAAAA-TPVz5qpFdFN-8eY-nDnmIF5cMDO7dsRq-Mbw9sULtL_r_AVh_3PxvbsCaDTb_yI' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
   }
   
   def dropKeyspace(keyspace: String): Unit = {

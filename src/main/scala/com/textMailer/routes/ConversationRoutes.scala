@@ -22,6 +22,7 @@ class ConversationRoutes(system: ActorSystem, conversationActor: ActorRef) exten
   
   before() {
     contentType = formats("json")
+    response.setHeader("cache-control", "max-age=0, no-cache")
   }
   
   get("/:userId") {
