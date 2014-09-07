@@ -72,127 +72,42 @@ class ImportEmailActor extends Actor {
   }
   
   def importGmail(userId: String, emailAddress: String, accessToken: String): Unit = {
-   val props = new Properties();
-   props.put("mail.store.protocol", "gimaps");
-   props.put("mail.imap.sasl.enable", "true");
+    val props = new Properties();
+    props.put("mail.store.protocol", "gimaps");
+    props.put("mail.imap.sasl.enable", "true");
    
-   props.put("mail.gimaps.sasl.enable", "true");
-   props.put("mail.gimaps.sasl.mechanisms", "XOAUTH2");
+    props.put("mail.gimaps.sasl.enable", "true");
+    props.put("mail.gimaps.sasl.mechanisms", "XOAUTH2");
 
-   props.put("mail.imap.auth.login.disable", "true");
-   props.put("mail.imap.auth.plain.disable", "true");
+    props.put("mail.imap.auth.login.disable", "true");
+    props.put("mail.imap.auth.plain.disable", "true");
 
-   val session = Session.getInstance(props)
+    val session = Session.getInstance(props)
 
-   val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
-   println(s"####### before connect")
-   store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
+    val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
+    println(s"####### before connect")
+    store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
 
    // get different folders??
-   val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
+    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
 
-   val currentDateTime = new DateTime
-   val lastEmailUid = (for {
-     ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption
-     uid <- ue.data.get("uid")
-   } yield uid.toLong).getOrElse(14900l) // change this to something reasonable. how far back to we want to go for first time users?
+    val currentDateTime = new DateTime
+    val lastEmailUid = (for {
+      ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption
+      uid <- ue.data.get("uid")
+    } yield uid.toLong).getOrElse(14900l) // change this to something reasonable. how far back to we want to go for first time users?
    
-   println(s"################### lastEmailUid $lastEmailUid")
+    println(s"################### lastEmailUid $lastEmailUid")
 
-//          if(!folder.isOpen())
-          folder.open(Folder.READ_WRITE);
-//          val messages = folder.search(fetchEmailsNewerThanDate)
-          val messages = folder.getMessagesByUID(lastEmailUid , LASTUID).toSeq
-          val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
-          println(s"@@@@@@@@@@@@@ newLastUID $newLastUID")
-          // folder.getMessages()
-          var a = 0;
-          
-          val md = MessageDigest.getInstance("MD5")
-
-          messages.map(m => {
-            val gm = m.asInstanceOf[GmailMessage]
-            val gmId = gm.getMsgId()
-            val uid = folder.getUID(gm)
-            println(s"########## uid $uid")
-            val body = getText(m)
-            val text = (for{
-              textValue <- body.get("text")
-              text <- textValue
-            } yield(text)) match {
-              case Some(t) => t.toString
-              case None => "no text"
-            }
-            
-            val html = (for{
-              htmlValue <- body.get("html")
-              html <- htmlValue
-            } yield(html)) match {
-              case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
-              case None => ""
-            }
-            
-//            println(s"<<<<<<<<<<<< text $text")
-//            println(s"<<<<<<<<<<<< html $html")
-
-            val emailId = UUIDs.random
-            
-            val threadId = gm.getThrId()
-
-            val sender = m.getFrom() match {
-              case null => ""
-              case Array() => ""
-              case a => InternetAddress.parse(a(0).toString)(0).getAddress
-            }
-//            println(s"################### sender $sender")
-            
-            // TODO: should to cc and bcc be Sets?
-            
-            val to = m.getRecipients(Message.RecipientType.TO) match {
-              case null => Set()
-              case Array() => Set()
-              case to => InternetAddress.parse(to(0).toString)(0).getAddress.split(",").toSet
-            }
-
-            val cc = m.getRecipients(Message.RecipientType.CC) match {
-              case null => Set()
-              case Array() => Set()
-              case cc => InternetAddress.parse(cc(0).toString)(0).getAddress.split(",").toSet
-            }
-
-            val bcc = m.getRecipients(Message.RecipientType.BCC) match {
-              case null => Set()
-              case Array() => Set()
-              case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
-            }
-
-//            println(s"################### to ${to}")
-//            println(s"################### cc ${cc}")
-//            println(s"################### bcc $bcc")
-
-            val subject = m.getSubject() match {
-              case null => "no_subject"
-              case x: String => x
-            }
-            println(s"!!!!!!!!!!!! subject: $subject")
-            
-            val recipients = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
-            println(s"@@@@@@@@@@@ recipientsSet $recipients")
-            val recipientsString = recipients.toString
-            println(s"@@@@@@@@@@@ recipientsString $recipientsString")
-            val recipientsHash = md5Hash(recipientsString)
-            println(s"############## hashText $recipientsHash")
-            val ts = m.getSentDate().getMillis
-            println(s"############## timestamp $ts \n\n\n")
-            val conversation = Conversation(userId, recipientsHash, recipients, ts)
-            ConversationIO().write(conversation)
-            OrdConversationIO().write(conversation)
-            val topic = Topic(userId, recipientsHash, threadId, subject, ts)
-            TopicIO().write(topic)
-            OrdTopicIO().write(topic)
-            val email = Email(gmId, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
-            EmailIO().write(email)
-          })
+    folder.open(Folder.READ_WRITE);
+    val messages = folder.getMessagesByUID(lastEmailUid , LASTUID).toSeq
+    val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
+    println(s"@@@@@@@@@@@@@ newLastUID $newLastUID")
+    
+    newLastUID match {
+      case newUID if newUID == lastEmailUid => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
+      case _ => writeMessages(messages, folder, userId, emailAddress)
+    }
 
     folder.close(false)
     store.close()
@@ -207,6 +122,92 @@ class ImportEmailActor extends Actor {
     val digest = md.digest()
     val bigInt = new BigInteger(1,digest)
     bigInt.toString(16)
+  }
+  
+  def writeMessages(messages: Seq[javax.mail.Message], folder: GmailFolder, userId: String, emailAddress: String): Unit = {
+    messages.map(m => {
+      val gm = m.asInstanceOf[GmailMessage]
+      val gmId = gm.getMsgId()
+      val uid = folder.getUID(gm)
+      println(s"########## uid $uid")
+      val body = getText(m)
+      val text = (for{
+        textValue <- body.get("text")
+        text <- textValue
+      } yield(text)) match {
+        case Some(t) => t.toString
+        case None => "no text"
+      }
+      
+      val html = (for{
+        htmlValue <- body.get("html")
+        html <- htmlValue
+      } yield(html)) match {
+        case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
+        case None => ""
+      }
+      
+//            println(s"<<<<<<<<<<<< text $text")
+//            println(s"<<<<<<<<<<<< html $html")
+
+      val emailId = UUIDs.random
+      
+      val threadId = gm.getThrId()
+
+      val sender = m.getFrom() match {
+        case null => ""
+        case Array() => ""
+        case a => InternetAddress.parse(a(0).toString)(0).getAddress
+      }
+//            println(s"################### sender $sender")
+      
+      // TODO: should to cc and bcc be Sets?
+      
+      val to = m.getRecipients(Message.RecipientType.TO) match {
+        case null => Set()
+        case Array() => Set()
+        case to => InternetAddress.parse(to(0).toString)(0).getAddress.split(",").toSet
+      }
+
+      val cc = m.getRecipients(Message.RecipientType.CC) match {
+        case null => Set()
+        case Array() => Set()
+        case cc => InternetAddress.parse(cc(0).toString)(0).getAddress.split(",").toSet
+      }
+
+      val bcc = m.getRecipients(Message.RecipientType.BCC) match {
+        case null => Set()
+        case Array() => Set()
+        case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
+      }
+
+//            println(s"################### to ${to}")
+//            println(s"################### cc ${cc}")
+//            println(s"################### bcc $bcc")
+
+      val subject = m.getSubject() match {
+        case null => ""
+        case x: String => x
+      }
+      println(s"!!!!!!!!!!!! subject: $subject")
+      
+      val recipients = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
+      println(s"@@@@@@@@@@@ recipientsSet $recipients")
+      val recipientsString = recipients.toString
+      println(s"@@@@@@@@@@@ recipientsString $recipientsString")
+      val recipientsHash = md5Hash(recipientsString)
+      println(s"############## hashText $recipientsHash")
+      val ts = m.getSentDate().getMillis
+      println(s"############## timestamp $ts \n\n\n")
+      val conversation = Conversation(userId, recipientsHash, recipients, ts)
+      ConversationIO().write(conversation)
+      OrdConversationIO().write(conversation)
+      val topic = Topic(userId, recipientsHash, threadId, subject, ts)
+      TopicIO().write(topic)
+      OrdTopicIO().write(topic)
+      val email = Email(gmId, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
+      EmailIO().write(email)
+    })
   }
   
   def getText(m: Message): Map[String, Option[Object]] = {
