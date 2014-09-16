@@ -7,6 +7,7 @@ case class Email (
   userId: String,
   threadId: Long,
   recipientsHash: String,
+  recipients: Option[Set[String]],
   ts: Long,
   subject: String,
   sender: String,

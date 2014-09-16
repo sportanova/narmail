@@ -50,14 +50,13 @@ class SimpleClient() {
     
       // TODO: shorten cf names to converations, topics, emails, etc.. 
 
-      // TODO: Add timestamp as value
-      // TODO: add email id from email?
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
       "id bigint," +
       "user_id text," +
       "thread_id bigint," + // TODO: add account id?
       "recipients_hash text," +
+      "recipients set<text>," +
       "ts bigint," +
       "subject text," +
       "sender text," +
@@ -99,6 +98,7 @@ class SimpleClient() {
         "recipients_hash text," +
         "recipients Set<text>," +
         "ts bigint," +
+        "email_account_id text," +
         "PRIMARY KEY(user_id, recipients_hash)" +
     ");")
     
@@ -108,35 +108,9 @@ class SimpleClient() {
         "recipients_hash text," +
         "recipients Set<text>," +
         "ts bigint," +
+        "email_account_id text," +
         "PRIMARY KEY((user_id), ts)" +
     ") with clustering order by (ts desc);") // TODO: add ttl
-    
-    // index table listing all topics / conversations in the order they came???
-    //    session.execute(
-//      s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_or_topics_by_time (" +
-//        "user_id text," +
-//        "conv_or_top text," + // <'conversation' || 'topic'>
-//        "ts timestamp," +
-//        "attrs Map<text,text>," + // attributes - queryable primary key && denormalized data
-//        "PRIMARY KEY((user_id, index_category), ts)" +
-//    ");")
-    
-    //TABLE COMBINING EVERYTHING?
-//    session.execute(
-//      s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
-//        "user_id text," +
-//        "recipients_hash text," +
-//        "thread_id bigint," +
-//        "email_id text," +
-//        "ts timestamp," +
-//        "text_body text," +
-//        "html_body text," +
-//        "email_info Map<text,text>," + // subject, recipients, sender, cc, bcc
-//        "PRIMARY KEY(user_id, recipients_hash, thread_id, email_id, ts)" +
-//    ");")
-    
-    // TODO: unique conversations / topics index table - list the uniques, no duplicates???
-    // "PRIMARY KEY(user_id, index_category <conversation || topic>, Map<primary key values>)" - no timestamp in primary key
     
     session.execute(
       s"CREATE TABLE IF NOT EXISTS $keyspace.topics_by_conversation (" +
@@ -158,8 +132,7 @@ class SimpleClient() {
         "PRIMARY KEY((user_id, recipients_hash), ts, thread_id)" +
     ") with clustering order by (ts desc);") // TODO: add ttl
     
-    // for users joining, importing user's emails, updating user's refresh tokens
-    session.execute(
+    session.execute(     // for users joining, importing user's emails, updating user's refresh tokens
       s"CREATE TABLE IF NOT EXISTS $keyspace.user_events (" +
         "user_id uuid," +
         "event_type text," +
@@ -176,7 +149,7 @@ class SimpleClient() {
 
 //    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
-//    update email_accounts set access_token = 'ya29.eQAeuMURfj_BOR0AAAB3cPRKK7YQ-O6J1_yz_zxF990WYdekSpiUFopz02be1Q' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
+//    update email_accounts set access_token = 'ya29.gQB5kzNrj1u4AuSlQZw8FFDpr_YW2NStbCN45C7IcZDJw3mUPCHkMFrl' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = '90a5d5c6-9165-4080-a7aa-cc4b45268ef3';
   }
   
   def dropKeyspace(keyspace: String): Unit = {

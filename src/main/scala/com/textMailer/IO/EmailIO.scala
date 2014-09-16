@@ -7,6 +7,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.Row
 import com.textMailer.models.Email
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 import com.textMailer.models.Model
 import org.joda.time.DateTime
 import com.datastax.driver.core.ResultSet
@@ -43,25 +44,31 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   }
   
   def build(row: Row): Email = {
+    val str: java.lang.String = ""
+
     val id: java.lang.Long = row.getLong("id")
     val userId = row.getString("user_id")
     val threadId: java.lang.Long = row.getLong("thread_id")
     val subject = row.getString("subject")
     val sender = row.getString("sender")
     val recipientsHash = row.getString("recipients_hash")
+    val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String] match {
+      case x: Set[String] => Some(x)
+      case null => None
+    }
     val ts: java.lang.Long = row.getLong("ts")
     val cc = row.getString("cc")
     val bcc = row.getString("bcc")
     val textBody = row.getString("text_body")
     val htmlBody = row.getString("html_body")
     
-    Email(id, userId, threadId, recipientsHash, ts, subject, sender, cc, bcc, textBody, htmlBody)
+    Email(id, userId, threadId, recipientsHash, recipients, ts, subject, sender, cc, bcc, textBody, htmlBody)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(id, user_id, thread_id, recipients_hash, ts, subject, sender, cc, bcc, text_body, html_body) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+    "(id, user_id, thread_id, recipients_hash, recipients, ts, subject, sender, cc, bcc, text_body, html_body) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -73,12 +80,17 @@ class EmailIO(client: SimpleClient) extends QueryIO {
     val threadId: java.lang.Long = email.threadId
     val ts: java.lang.Long = email.ts
     val id: java.lang.Long = email.id
+    val recipients = email.recipients match {
+      case Some(r) => setAsJavaSet(r)
+      case None => null
+    }
 
     boundStatement.bind(
       id,
       email.userId,
       threadId,
       email.recipientsHash,
+      recipients,
       ts,
       email.subject,
       email.sender,

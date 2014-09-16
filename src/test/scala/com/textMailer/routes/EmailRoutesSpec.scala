@@ -16,6 +16,12 @@ import com.textMailer.IO.TopicIO
 import com.textMailer.models.Topic
 import com.textMailer.models.Email
 import com.textMailer.routes.EmailRoutes
+import com.textMailer.models.EmailAccount
+import com.textMailer.IO.EmailAccountIO
+import org.scalatra.json._
+import org.json4s._
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.{read, write}
 
 class EmailRoutesSpec extends MutableScalatraSpec {
   val prepare = PrepareData()
@@ -33,15 +39,29 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       val recipientsHash = "dasfasfasfasd"
       val threadId = 4534535l
       TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1", 1l))
-      val email1 = Email(123l, "someId", threadId, recipientsHash, 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
-      val email2 = Email(321l, "someId", threadId, recipientsHash, 12l, "subject1", "sender2", "cc", "bcc", "emailBodyText", "emailBodyHtml")
+      val email1 = Email(123l, "someId", threadId, recipientsHash, None, 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
+      val email2 = Email(321l, "someId", threadId, recipientsHash, None, 12l, "subject1", "sender2", "cc", "bcc", "emailBodyText", "emailBodyHtml")
       EmailIO().write(email1)
       EmailIO().write(email2)
 
       get(s"/${user.id}/${threadId.toString}") {
         status must_== 200
         val res = response.body
-        res === """[{"id":321,"userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","ts":12,"subject":"subject1","sender":"sender2","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"},{"id":123,"userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","ts":11,"subject":"subject1","sender":"sender1","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"}]"""
+        res === """[{"id":321,"userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","recipients":[],"ts":12,"subject":"subject1","sender":"sender2","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"},{"id":123,"userId":"someId","threadId":4534535,"recipientsHash":"dasfasfasfasd","recipients":[],"ts":11,"subject":"subject1","sender":"sender1","cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"}]"""
+      }
+    }
+  }
+  
+  "post /emails/:emailAccountId"   should {
+    "send an email" in {
+      val gmailAccount = EmailAccount("1", "13242342", "gmail", "sportano@gmail.com", "23424sdjfsf", "afdasfasdfsadfsf")
+      EmailAccountIO().write(gmailAccount)
+
+      implicit val formats = Serialization.formats(NoTypeHints)
+      val email1 = org.json4s.jackson.Serialization.write(Email(123l, "someId", 2342342l, "234242", Some(Set("sportano@gmail.com")), 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml"))
+
+      post(s"/${gmailAccount.id}", email1, Map("Content-Type" -> "application/json")) {
+        
       }
     }
   }

@@ -50,20 +50,20 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
   
   def build(row: Row): Conversation = {
     val str: java.lang.String = ""
-    val set: java.util.Set[String] = setAsJavaSet(Set())
 
     val userId = row.getString("user_id")
     val recipientsHash = row.getString("recipients_hash")
     val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String]
     val ts = row.getLong("ts")
+    val emailAccountId = row.getString("email_account_id")
     
-    Conversation(userId, recipientsHash, recipients, ts)
+    Conversation(userId, recipientsHash, recipients, ts, emailAccountId)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(user_id,recipients_hash, recipients, ts) " +
-    "VALUES (?, ?, ?, ?);");
+    "(user_id,recipients_hash, recipients, ts, email_account_id) " +
+    "VALUES (?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -78,7 +78,8 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
       conversation.userId,
       conversation.recipientsHash,
       setAsJavaSet(conversation.recipients),
-      conversation.ts.asInstanceOf[java.lang.Long]
+      conversation.ts.asInstanceOf[java.lang.Long],
+      conversation.emailAccountId
     )
   }
 }

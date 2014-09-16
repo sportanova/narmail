@@ -23,8 +23,8 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.InternetAddress
 import javax.mail.Message
 
-object SendEmailIO {
-  def send(email: Email): Unit = {
+object SendEmail {
+  def send(email: Email, from: String, oAuthToken: String): Unit = {
 //    connectToSmtp("smtp.gmail.com", 587, "sportano@gmail.com", "ya29.dQAjrTVHXpUPJCIAAADQ471bD9ol295op76DzbujyPGprSVIL6bDoTw0yn7PPb-iHPEkkUNCbbhphY2qFQw")
     val props = new Properties();
 //    props.put("mail.smtp.auth", "true");
@@ -37,7 +37,7 @@ object SendEmailIO {
 //    props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
 //    props.put("mail.smtp.auth.login.disable", "true");
 //    props.put("mail.smtp.auth.plain.disable", "true");
-    val oauthToken = "ya29.dQAEpiEXWQisqyIAAABJcWe726uYa7_FaNDA7ojPp8iF8xrCEr9RtKHmLzrZCiWOS2KqljERAnVaxCvcMf0"
+//    val oauthToken = "ya29.gQB5kzNrj1u4AuSlQZw8FFDpr_YW2NStbCN45C7IcZDJw3mUPCHkMFrl"
     
     props.put("mail.smtp.sasl.enable", "true");
    
@@ -49,18 +49,26 @@ object SendEmailIO {
     props.put("mail.smtp.port", "587"); //587 465
     props.put("mail.smtp.starttls.enable", "true");
     val session = Session.getInstance(props);
-    session.setDebug(true);
+    session.setDebug(true); // TODO: setup env variable so this isn't enabled in prod
     val transport = new SMTPTransport(session, null);
-    transport.connect("smtp.gmail.com", "sportano@gmail.com", oauthToken) //ssl://
+    transport.connect("smtp.gmail.com", from, oAuthToken) //ssl://
     
     val message: MimeMessage = new MimeMessage(session);
-    message.setFrom(new InternetAddress("sportano@gmail.com"));
-    message.addRecipient(Message.RecipientType.TO, new InternetAddress("sportano@gmail.com"));
-    message.setSubject("This is the Subject Line!");
-    message.setText("This is actual message");
+    message.setFrom(new InternetAddress(from));
+    email.recipients match {
+      case Some(r) => {
+        r.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
+        EmailIO().write(email) // TODO: figure out what to do with new messages - how do we get the threadid
+
+        message.setSubject(email.subject);
+        message.setText(email.textBody);
     
-//    transport.issueCommand("AUTH XOAUTH2 " + oauthToken, 235);
-    transport.sendMessage(message, message.getAllRecipients());
+//        transport.issueCommand("AUTH XOAUTH2 " + oauthToken, 235);
+        transport.sendMessage(message, message.getAllRecipients());
+      }
+      case None => println(s"NO RECIPIENTS: NOT SENDING EMAIL")
+    }
+
     transport.close();
   }
   

@@ -7,5 +7,6 @@ case class Conversation (
   userId: String,
   recipientsHash: String,
   recipients: Set[String],
-  ts: Long
+  ts: Long,
+  emailAccountId: String
 ) extends Model

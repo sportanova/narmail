@@ -49,7 +49,7 @@ class ImportEmailActor extends Actor {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
       } yield(emailAccount)).map(ea => {
-        importGmail(ea.userId, ea.username, ea.accessToken)
+        importGmail(ea.userId, ea.username, ea.accessToken, ea.id)
       })
     }
     case ImportEmail(userId) => { // TODO: Add time as param, so can continually get latest, unchecked emails??
@@ -57,12 +57,10 @@ class ImportEmailActor extends Actor {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {
             ea.provider match {
-              case "gmail" => {
-                importGmail(ea.userId, ea.username, ea.accessToken)
-              }
+              case "gmail" => importGmail(ea.userId, ea.username, ea.accessToken, ea.id)
               case _ =>
             }
-          })
+         })
         }
         case None => None
       }
@@ -71,21 +69,17 @@ class ImportEmailActor extends Actor {
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def importGmail(userId: String, emailAddress: String, accessToken: String): Unit = {
+  def importGmail(userId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
     val props = new Properties();
     props.put("mail.store.protocol", "gimaps");
     props.put("mail.imap.sasl.enable", "true");
-   
     props.put("mail.gimaps.sasl.enable", "true");
     props.put("mail.gimaps.sasl.mechanisms", "XOAUTH2");
-
     props.put("mail.imap.auth.login.disable", "true");
     props.put("mail.imap.auth.plain.disable", "true");
 
     val session = Session.getInstance(props)
-
     val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
-    println(s"####### before connect")
     store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
 
    // get different folders??
@@ -106,7 +100,7 @@ class ImportEmailActor extends Actor {
     
     newLastUID match {
       case newUID if newUID == lastEmailUid => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
-      case _ => writeMessages(messages, folder, userId, emailAddress)
+      case _ => writeMessages(messages, folder, userId, emailAddress, emailAccountId)
     }
 
     folder.close(false)
@@ -124,7 +118,7 @@ class ImportEmailActor extends Actor {
     bigInt.toString(16)
   }
   
-  def writeMessages(messages: Seq[javax.mail.Message], folder: GmailFolder, userId: String, emailAddress: String): Unit = {
+  def writeMessages(messages: Seq[javax.mail.Message], folder: GmailFolder, userId: String, emailAddress: String, emailAccountId: String): Unit = {
     messages.map(m => {
       val gm = m.asInstanceOf[GmailMessage]
       val gmId = gm.getMsgId()
@@ -190,6 +184,7 @@ class ImportEmailActor extends Actor {
         case x: String => x
       }
       println(s"!!!!!!!!!!!! subject: $subject")
+      println(s"!!!!!!!!!!!! threadId: $threadId")
       
       val recipients = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
       println(s"@@@@@@@@@@@ recipientsSet $recipients")
@@ -199,13 +194,13 @@ class ImportEmailActor extends Actor {
       println(s"############## hashText $recipientsHash")
       val ts = m.getSentDate().getMillis
       println(s"############## timestamp $ts \n\n\n")
-      val conversation = Conversation(userId, recipientsHash, recipients, ts)
+      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId)
       ConversationIO().write(conversation)
       OrdConversationIO().write(conversation)
       val topic = Topic(userId, recipientsHash, threadId, subject, ts)
       TopicIO().write(topic)
       OrdTopicIO().write(topic)
-      val email = Email(gmId, userId, threadId, recipientsHash, ts, subject, sender, "cc", "bcc", text, html)
+      val email = Email(gmId, userId, threadId, recipientsHash, None, ts, subject, sender, "cc", "bcc", text, html)
       EmailIO().write(email)
     })
   }

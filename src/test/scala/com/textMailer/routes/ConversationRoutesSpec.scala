@@ -26,13 +26,13 @@ class ConversationRoutesSpec extends MutableScalatraSpec {
       val user = User("someId", "Stephen", "Portanova", "PASSWORD")
       val writtenUser = UserIO().write(user)
       val ts = {new DateTime}.getMillis
-      ConversationIO().write(Conversation(user.id, "peter@gmail.com", Set("peter@gmail.com"), ts))
-      ConversationIO().write(Conversation(user.id, "stephen@gmail.com", Set("stephen@gmail.com"), ts))
+      ConversationIO().write(Conversation(user.id, "peter@gmail.com", Set("peter@gmail.com"), ts, "123"))
+      ConversationIO().write(Conversation(user.id, "stephen@gmail.com", Set("stephen@gmail.com"), ts, "123"))
 
       get(s"/${user.id}") {
         status must_== 200
         val res = response.body
-        res === s"""[{"userId":"someId","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"],"ts":$ts},{"userId":"someId","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"],"ts":$ts}]"""
+        res === s"""[{"userId":"someId","recipientsHash":"peter@gmail.com","recipients":["peter@gmail.com"],"ts":$ts,"emailAccountId":"123"},{"userId":"someId","recipientsHash":"stephen@gmail.com","recipients":["stephen@gmail.com"],"ts":$ts,"emailAccountId":"123"}]"""
       }
     }
   }
