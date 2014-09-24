@@ -38,8 +38,7 @@ object SendEmail {
 
         message.setSubject(email.subject);
         message.setText(email.textBody);
-    
-//        transport.issueCommand("AUTH XOAUTH2 " + oauthToken, 235);
+
         transport.sendMessage(message, message.getAllRecipients());
       }
       case None => println(s"NO RECIPIENTS: NOT SENDING EMAIL")

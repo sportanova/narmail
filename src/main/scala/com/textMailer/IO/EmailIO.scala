@@ -13,6 +13,7 @@ import org.joda.time.DateTime
 import com.datastax.driver.core.ResultSet
 import scala.util.Try
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object EmailIO {
   val client = SimpleClient()
@@ -41,6 +42,17 @@ class EmailIO(client: SimpleClient) extends QueryIO {
   
   def asyncWrite(email: Email): Future[Email] = {
     asyncCurriedWrite(email)
+  }
+  
+  val asyncCurriedCount = asyncCurryCount(keyspace)(table)(build)(session) _
+
+  def asyncCount(clauses: List[CassandraClause], limit: Int): Future[Long] = {
+    asyncCurriedCount(clauses)(limit).map(row => {
+      row.headOption match {
+        case Some(r) => r.getLong(0)
+        case None => 0l
+      }
+    })
   }
   
   def build(row: Row): Email = {

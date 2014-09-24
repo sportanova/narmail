@@ -32,15 +32,22 @@ import com.textMailer.Implicits.ImplicitConversions._
 import scala.collection.immutable.TreeSet
 import scala.collection.immutable.SortedSet
 import com.textMailer.models.UserEvent
+import scala.concurrent.ExecutionContext.Implicits.global
+import akka.util.Timeout
+import akka.actor.Props
+import com.textMailer.IO.actors.SaveEmailDataActor.SaveData
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])
   case class RecurringEmailImport
 }
 
-class ImportEmailActor extends Actor {
+class ImportEmailActor extends Actor { // TODO: make this actor into it's own service, that consumes a user id from a queue
   import com.textMailer.IO.actors.ImportEmailActor._
-  // TODO: make this actor into it's own service, that consumes a user id from a queue
+  
+  implicit val timeout = Timeout(4000)
+  val saveEmailDataActor = context.actorOf(Props[SaveEmailDataActor], "SaveEmailDataActor")
+
   def receive = {
     case "recurringImport" => { // TODO: add unit test??
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this - not how events_table schema works
@@ -88,9 +95,9 @@ class ImportEmailActor extends Actor {
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- ue.data.get("uid")
+      uid <- ue.data.get("uid") // Some(15725l)
     } yield uid.toLong)
-    
+
     val messageCount50 = folder.getMessageCount - 50
    
     println(s"################### lastEmailUid $lastEmailUid")
@@ -118,16 +125,6 @@ class ImportEmailActor extends Actor {
     folder.close(false)
     store.close()
     UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map("uid" -> newLastUID.toString)))
-  }
-  
-  def md5Hash(str: String) = {
-    val md = MessageDigest.getInstance("MD5")
-    
-    md.reset()
-    md.update(str.getBytes());
-    val digest = md.digest()
-    val bigInt = new BigInteger(1,digest)
-    bigInt.toString(16)
   }
   
   def writeMessages(messages: Seq[javax.mail.Message], folder: GmailFolder, userId: String, emailAddress: String, emailAccountId: String): Unit = {
@@ -195,25 +192,10 @@ class ImportEmailActor extends Actor {
         case null => ""
         case x: String => x
       }
-      println(s"!!!!!!!!!!!! subject: $subject")
-      println(s"!!!!!!!!!!!! threadId: $threadId")
       
-      val recipients = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
-      println(s"@@@@@@@@@@@ recipientsSet $recipients")
-      val recipientsString = recipients.toString
-      println(s"@@@@@@@@@@@ recipientsString $recipientsString")
-      val recipientsHash = md5Hash(recipientsString)
-      println(s"############## hashText $recipientsHash")
       val ts = m.getSentDate().getMillis
-      println(s"############## timestamp $ts \n\n\n")
-      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
-      ConversationIO().write(conversation)
-      OrdConversationIO().write(conversation)
-      val topic = Topic(userId, recipientsHash, threadId, subject, ts)
-      TopicIO().write(topic)
-      OrdTopicIO().write(topic)
-      val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, "cc", "bcc", text, html)
-      EmailIO().write(email)
+
+      saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, text, html)
     })
   }
   
