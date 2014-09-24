@@ -43,7 +43,7 @@ class ImportEmailActor extends Actor {
   // TODO: make this actor into it's own service, that consumes a user id from a queue
   def receive = {
     case "recurringImport" => { // TODO: add unit test??
-      val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
+      val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this - not how events_table schema works
       
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
@@ -89,17 +89,29 @@ class ImportEmailActor extends Actor {
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
       uid <- ue.data.get("uid")
-    } yield uid.toLong).getOrElse(15700l) // change this to something reasonable. how far back to we want to go for first time users?
+    } yield uid.toLong)
+    
+    val messageCount50 = folder.getMessageCount - 50
    
     println(s"################### lastEmailUid $lastEmailUid")
 
     folder.open(Folder.READ_WRITE);
-    val messages = folder.getMessagesByUID(lastEmailUid , LASTUID).toSeq
+
+    val messages = lastEmailUid match {
+      case Some(uid) => folder.getMessagesByUID(uid, LASTUID).toList
+      case None => {
+        val date = (new DateTime).minusDays(0).toDate()
+        val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
+        folder.search(olderThan).toList
+      }
+    }
+    println(s"!!!!!!!!!!!!!!!!!! messages.size ${messages.size}")
+
     val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
     println(s"@@@@@@@@@@@@@ newLastUID $newLastUID")
     
     newLastUID match {
-      case newUID if newUID == lastEmailUid => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
+      case newUID if newUID == lastEmailUid.getOrElse(0l) => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
       case _ => writeMessages(messages, folder, userId, emailAddress, emailAccountId)
     }
 
