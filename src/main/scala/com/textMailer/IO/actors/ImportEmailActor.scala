@@ -89,7 +89,7 @@ class ImportEmailActor extends Actor {
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
       uid <- ue.data.get("uid")
-    } yield uid.toLong).getOrElse(15200l) // change this to something reasonable. how far back to we want to go for first time users?
+    } yield uid.toLong).getOrElse(15700l) // change this to something reasonable. how far back to we want to go for first time users?
    
     println(s"################### lastEmailUid $lastEmailUid")
 

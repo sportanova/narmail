@@ -20,7 +20,7 @@ object TypeClass {
     }
     implicit object MostRecentItemsTopic extends MostRecentItems[Topic] {
       def ts(topic: Topic): Long = topic.ts
-      def member(topic: Topic): String = topic.recipientsHash
+      def member(topic: Topic): String = topic.threadId.toString
     }
   }
 }

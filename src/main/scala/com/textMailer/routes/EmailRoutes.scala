@@ -41,7 +41,7 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
       case Success(e) => {
         params.get("emailAccountId") match {
           case Some(eaId) => {
-            val result = emailActor ? SendMail(e, eaId) // TODO: return Try, rather than unit
+            val result = emailActor ! SendMail(e, eaId) // TODO: return Try, rather than unit
                     //    new AsyncResult { val is = result }
           }
           case None => // no email account id provided

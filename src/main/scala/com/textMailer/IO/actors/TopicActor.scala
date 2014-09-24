@@ -25,10 +25,10 @@ class TopicActor extends Actor {
       topics pipeTo sender
     }
     case GetOrderedTopicsByConversation(userId, recipientsHash, time) => {
-      val clauses: List[CassandraClause] = time match {
-        case Some(t) => Lt("ts", t) :: List(Eq("user_id",userId))
+      val clauses: List[CassandraClause] = (time match {
+        case Some(t) => Lt("ts", t) :: List(Eq("user_id", userId))
         case None => List(Eq("user_id",userId))
-      }
+      }) ++ List(Eq("recipients_hash", recipientsHash))
 
       (for {
         topics <- OrdTopicIO().asyncFind(clauses, 30)
