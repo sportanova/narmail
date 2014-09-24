@@ -5,7 +5,10 @@ import org.scalatra.test.specs2._
 import com.textMailer.IO.EmailIO
 import com.textMailer.models.Email
 import com.textMailer.IO.Eq
-import com.textMailer.IO.SendEmailIO
+import com.textMailer.IO.SendEmail
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.actors.Futures
 
 class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   PrepareData()
@@ -18,12 +21,27 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
 //      println(s"############## stringLength ${newString.length}")
 //      println(s"############## string ${newString}")
     }
+    
+    "futures" in {
+      def asyncify[A, B](f: A => B): A => scala.actors.Future[B] = (a => Futures.future(f(a)))
+      def sleepFor(seconds: Int) = {
+        Thread.sleep(seconds * 1000)
+        println(s"######## seconds $seconds")
+        seconds
+      }
+      
+      val asyncSleepFor = asyncify(sleepFor)
+      val test = asyncSleepFor(5) // now it does NOT block
+//      val a = test()
+      println("waiting...")         // prints "waiting..." rightaway
+//      println("future returns %d".format(test())) // prints "future returns 5" after 5 seconds
+    }
   }
   
   "sending emails" should {
     "do something" in {
       val email = Email(123l, "someUserId", 4535335l, "recipients", Some(Set("sportano@gmail.com")), 234243l, "subject", "sender", "cc","bcc","body", "emailBodyHtml")
-//      SendEmailIO.send(email, "sportano@gmail.com", "ya29.ggAHt-s2ZRRiFrYNvFj7-n7HJhrBpzykBR1OSQkQZm5CseFmBuA53dUJ")
+      SendEmail.send(email, "sportano@gmail.com", "ya29.igB_lAmnGVh0bCz3aUwoDx3T9IqWk65GL_fPklCKNdzxAp36GufbQstx")
     }
   }
 }

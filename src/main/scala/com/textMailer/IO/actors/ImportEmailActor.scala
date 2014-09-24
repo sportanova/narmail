@@ -87,9 +87,9 @@ class ImportEmailActor extends Actor {
 
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
-      ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption
+      ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
       uid <- ue.data.get("uid")
-    } yield uid.toLong).getOrElse(14900l) // change this to something reasonable. how far back to we want to go for first time users?
+    } yield uid.toLong).getOrElse(15200l) // change this to something reasonable. how far back to we want to go for first time users?
    
     println(s"################### lastEmailUid $lastEmailUid")
 
@@ -194,13 +194,13 @@ class ImportEmailActor extends Actor {
       println(s"############## hashText $recipientsHash")
       val ts = m.getSentDate().getMillis
       println(s"############## timestamp $ts \n\n\n")
-      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId)
+      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
       ConversationIO().write(conversation)
       OrdConversationIO().write(conversation)
       val topic = Topic(userId, recipientsHash, threadId, subject, ts)
       TopicIO().write(topic)
       OrdTopicIO().write(topic)
-      val email = Email(gmId, userId, threadId, recipientsHash, None, ts, subject, sender, "cc", "bcc", text, html)
+      val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, "cc", "bcc", text, html)
       EmailIO().write(email)
     })
   }

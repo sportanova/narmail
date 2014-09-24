@@ -25,33 +25,9 @@ import javax.mail.Message
 
 object SendEmail {
   def send(email: Email, from: String, oAuthToken: String): Unit = {
-//    connectToSmtp("smtp.gmail.com", 587, "sportano@gmail.com", "ya29.dQAjrTVHXpUPJCIAAADQ471bD9ol295op76DzbujyPGprSVIL6bDoTw0yn7PPb-iHPEkkUNCbbhphY2qFQw")
-    val props = new Properties();
-//    props.put("mail.smtp.auth", "true");
-//    props.put("mail.smtp.starttls.enable", "true");
-//    props.put("mail.smtp.host", "smtp.gmail.com");
-//    props.put("mail.smtp.port", "587");
-    
-//    props.put("mail.smtp.ssl.enable", "true"); // required for Gmail
-//    props.put("mail.smtp.sasl.enable", "true");
-//    props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
-//    props.put("mail.smtp.auth.login.disable", "true");
-//    props.put("mail.smtp.auth.plain.disable", "true");
-//    val oauthToken = "ya29.gQB5kzNrj1u4AuSlQZw8FFDpr_YW2NStbCN45C7IcZDJw3mUPCHkMFrl"
-    
-    props.put("mail.smtp.sasl.enable", "true");
-   
-    props.put("mail.smtp.sasl.enable", "true");
-    props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
-
-    props.put("mail.smtp.auth.login.disable", "true");
-    props.put("mail.smtp.auth.plain.disable", "true");
-    props.put("mail.smtp.port", "587"); //587 465
-    props.put("mail.smtp.starttls.enable", "true");
-    val session = Session.getInstance(props);
-    session.setDebug(true); // TODO: setup env variable so this isn't enabled in prod
-    val transport = new SMTPTransport(session, null);
-    transport.connect("smtp.gmail.com", from, oAuthToken) //ssl://
+    val connectionData = connectToSmtp("smtp.gmail.com", 587, "sportano@gmail.com", oAuthToken)
+    val transport = connectionData._1
+    val session = connectionData._2
     
     val message: MimeMessage = new MimeMessage(session);
     message.setFrom(new InternetAddress(from));
@@ -72,32 +48,23 @@ object SendEmail {
     transport.close();
   }
   
-  def connectToSmtp(host: String, port: Int, userEmail: String, oauthToken: String): SMTPTransport = {
-    val props = new Properties();
-    props.put("mail.smtp.auth", "true");
-    props.put("mail.smtp.starttls.enable", "true");
-    props.put("mail.smtp.host", "smtp.gmail.com");
-    props.put("mail.smtp.port", "587");
-
-//    props.put("mail.smtp.starttls.enable", "true");
-//    props.put("mail.smtp.starttls.required", "true");
-//    props.put("mail.smtp.sasl.enable", "false");
+  def connectToSmtp(host: String, port: Int, from: String, oAuthToken: String): (SMTPTransport, Session) = {
+     val props = new Properties();
     
-    val session = Session.getInstance(props) 
-    session.setDebug(true);
+    props.put("mail.smtp.sasl.enable", "true");
+   
+    props.put("mail.smtp.sasl.enable", "true");
+    props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
 
-    val unusedUrlName: URLName = null;
-    val transport = new SMTPTransport(session, unusedUrlName);
-    // If the password is non-null, SMTP tries to do AUTH LOGIN.
-    val emptyPassword: String = null;
-    transport.connect(host, port, userEmail, emptyPassword);
-
-    val response = String.format("user=%s\1auth=Bearer %s\1\1", userEmail, oauthToken).getBytes();
-    val textResponse = BASE64EncoderStream.encode(response);
-    println(s"########### textResponse $textResponse")
-
-    transport.issueCommand("AUTH XOAUTH2 " + new String(response), 235);
-
-    return transport;
+    props.put("mail.smtp.auth.login.disable", "true");
+    props.put("mail.smtp.auth.plain.disable", "true");
+    props.put("mail.smtp.port", "587"); //587 465
+    props.put("mail.smtp.starttls.enable", "true");
+    val session = Session.getInstance(props);
+    session.setDebug(true); // TODO: setup env variable so this isn't enabled in prod
+    val transport = new SMTPTransport(session, null);
+    transport.connect("smtp.gmail.com", from, oAuthToken) //ssl://
+    
+    (transport, session)
   }
 }

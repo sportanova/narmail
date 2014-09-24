@@ -24,16 +24,22 @@ trait QueryIO {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   // wrap in Try?
-  def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
+  def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)(build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
     val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)
     session.executeAsync(query).getUninterruptibly(10l, SECONDS).asScala.toList.map(row => build(row))
   }
 
-  def asyncCurryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)( build: Row => A)(session: Session)(clauses: List[T])( limit: Int): Future[List[A]] = {
+  def asyncCurryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)(build: Row => A)(session: Session)(clauses: List[T])( limit: Int): Future[List[A]] = {
     val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)
     session.executeAsync(query).map(_.all().asScala.toList.map(row => build(row))) 
+  }
+  
+  def asyncCurryCount[T <: CassandraClause, A <: Model](keyspace: String)(table: String)(build: Row => A)(session: Session)(clauses: List[T])( limit: Int): Future[List[Row]] = {
+    val query = QueryBuilder.select().countAll().from(keyspace,table).limit(limit)
+    val queryWithClauses = addWhereClauses(query, clauses)
+    session.executeAsync(query).map(_.all().asScala.toList) 
   }
   
   def addWhereClauses(query: Select, allClauses: List[CassandraClause]): Select = {

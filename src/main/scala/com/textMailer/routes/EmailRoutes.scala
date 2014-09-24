@@ -19,7 +19,7 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   protected implicit def executor: ExecutionContext = system.dispatcher
 
   import _root_.akka.pattern.ask
-  implicit val defaultTimeout = Timeout(1000)
+  implicit val defaultTimeout = Timeout(5000)
   
   before() {
     contentType = formats("json")
@@ -33,11 +33,8 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
     new AsyncResult { val is = emails }
   }
   
-  post("/:emailAccountId") {
-    val email = parsedBody.extract[Email]
-    println(s"################ email $email")
-    val emailAccountId = params.get("emailAccountId")
-
+  post("/send/:userId") {
+    val emailData = parsedBody.values.asInstanceOf[Map[String,Any]]
 //    val result = emailActor ? SendMail(email, emailAccountId) // TODO: return Try, rather than unit
 //    new AsyncResult { val is = result }
   }

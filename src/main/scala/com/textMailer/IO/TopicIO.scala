@@ -13,6 +13,7 @@ import com.datastax.driver.core.ResultSet
 import scala.util.Try
 import com.textMailer.models.Topic
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TopicIO {
   val client = SimpleClient()
@@ -46,6 +47,17 @@ class TopicIO(client: SimpleClient, table: String) extends QueryIO {
   
   def asyncWrite(topic: Topic): Future[Topic] = {
     asyncCurriedWrite(topic)
+  }
+  
+  val asyncCurriedCount = asyncCurryCount(keyspace)(table)(build)(session) _
+
+  def asyncCount(clauses: List[CassandraClause], limit: Int): Future[Long] = {
+    asyncCurriedCount(clauses)(limit).map(row => {
+      row.headOption match {
+        case Some(r) => r.getLong(0)
+        case None => 0l
+      }
+    })
   }
   
   def build(row: Row): Topic = {

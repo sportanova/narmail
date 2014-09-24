@@ -53,12 +53,12 @@ class EmailRoutesSpec extends MutableScalatraSpec {
   }
   
   "post /emails/:emailAccountId"   should {
-    "send an email" in {
-      val gmailAccount = EmailAccount("1", "13242342", "gmail", "sportano@gmail.com", "23424sdjfsf", "afdasfasdfsadfsf")
+    val gmailAccount = EmailAccount("1", "13242342", "gmail", "sportano@gmail.com", "ya29.ggBQJxk5l6b11TpeLeNrr3ah6AOEtddjA0qRjp869-9KTSSLUnSjPhMI", "ya29.ggBQJxk5l6b11TpeLeNrr3ah6AOEtddjA0qRjp869-9KTSSLUnSjPhMI")
       EmailAccountIO().write(gmailAccount)
+    "send an email" in {
 
       implicit val formats = Serialization.formats(NoTypeHints)
-      val email1 = org.json4s.jackson.Serialization.write(Email(123l, "someId", 2342342l, "234242", Some(Set("sportano@gmail.com")), 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml"))
+      val email1 = org.json4s.jackson.Serialization.write(Email(123l, "1", 2342342l, "234242", Some(Set("sportano@gmail.com")), 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml"))
 
       post(s"/${gmailAccount.id}", email1, Map("Content-Type" -> "application/json")) {
         
