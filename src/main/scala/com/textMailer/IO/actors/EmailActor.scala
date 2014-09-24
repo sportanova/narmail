@@ -12,7 +12,7 @@ import scala.util.Failure
 
 object EmailActor {
   case class GetEmailsForTopic(userId: Option[String], threadId: Option[String])
-  case class SendMail(email: Email, emailAccountId: Option[String])
+  case class SendMail(email: Email, emailAccountId: String)
 }
 
 class EmailActor extends Actor {
@@ -34,7 +34,7 @@ class EmailActor extends Actor {
     }
 
     case SendMail(email, emailAccountId) => {
-      val result = EmailAccountIO().asyncFind(List(Eq("id",emailAccountId.getOrElse("none")), Eq("user_id",email.userId)), 1).map(ea => ea.headOption match {
+      val result = EmailAccountIO().asyncFind(List(Eq("id",emailAccountId), Eq("user_id",email.userId)), 1).map(ea => ea.headOption match {
         case Some(acc) => SendEmail.send(email, acc.username, acc.accessToken) // TODO: return TRY
         case None => // TODO: return TRY - failure due to no email account
       })

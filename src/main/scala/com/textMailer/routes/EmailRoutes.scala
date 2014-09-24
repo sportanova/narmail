@@ -13,6 +13,9 @@ import scala.concurrent.ExecutionContext
 import org.scalatra.{Accepted, AsyncResult, FutureSupport, ScalatraServlet}
 import com.textMailer.IO.actors.EmailActor._
 import com.textMailer.models.Email
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraServlet with JacksonJsonSupport with FutureSupport with MethodOverride {
   implicit val jsonFormats: Formats = DefaultFormats.withDouble
@@ -33,9 +36,18 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
     new AsyncResult { val is = emails }
   }
   
-  post("/send/:userId") {
-    val emailData = parsedBody.values.asInstanceOf[Map[String,Any]]
-//    val result = emailActor ? SendMail(email, emailAccountId) // TODO: return Try, rather than unit
-//    new AsyncResult { val is = result }
+  post("/send/:emailAccountId") {
+    Try{parsedBody.extract[Email]} match {
+      case Success(e) => {
+        params.get("emailAccountId") match {
+          case Some(eaId) => {
+            val result = emailActor ? SendMail(e, eaId) // TODO: return Try, rather than unit
+                    //    new AsyncResult { val is = result }
+          }
+          case None => // no email account id provided
+        }
+      }
+      case Failure(ex) => // TODO - return message about email not properly formed
+    }
   }
 }
