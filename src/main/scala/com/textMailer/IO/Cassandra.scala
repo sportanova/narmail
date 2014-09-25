@@ -116,6 +116,8 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "email_account_id text," +
+//        "em_cnt bigint," +
+//        "tp_cnt bigint," +
         "PRIMARY KEY(user_id, recipients_hash)" +
     ");")
     
@@ -126,6 +128,8 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "email_account_id text," +
+//        "em_cnt bigint," +
+//        "tp_cnt bigint," +
         "PRIMARY KEY((user_id), ts)" +
     ") with clustering order by (ts desc);") // TODO: add ttl
     
@@ -136,6 +140,7 @@ class SimpleClient() {
         "thread_id bigint," +
         "subject text," +
         "ts bigint," +
+        "em_cnt bigint," +
         "PRIMARY KEY((user_id, recipients_hash), thread_id)" +
     ");")
     
@@ -146,6 +151,7 @@ class SimpleClient() {
         "thread_id bigint," +
         "subject text," +
         "ts bigint," +
+        "em_cnt bigint," +
         "PRIMARY KEY((user_id, recipients_hash), ts, thread_id)" +
     ") with clustering order by (ts desc);") // TODO: add ttl
     

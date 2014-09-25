@@ -50,9 +50,9 @@ class SaveEmailDataActor extends Actor {
         case None => ""
       }
 
-      val topic = Topic(userId, recipientsHash, threadId, subject, ts)
-      TopicIO().asyncWrite(topic)
-      OrdTopicIO().asyncWrite(topic)
+//      val topic = Topic(userId, recipientsHash, threadId, subject, ts)
+//      TopicIO().asyncWrite(topic)
+//      OrdTopicIO().asyncWrite(topic)
       val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
       EmailTopicIO().asyncWrite(email)
       EmailConversationIO().asyncWrite(email)

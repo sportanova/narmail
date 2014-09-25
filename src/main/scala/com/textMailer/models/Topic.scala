@@ -7,5 +7,6 @@ case class Topic (
   recipientsHash: String,
   threadId: Long,
   subject: String,
-  ts: Long
+  ts: Long,
+  emailCount: Long
 ) extends Model

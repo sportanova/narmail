@@ -24,7 +24,7 @@ object TopicIO {
 object OrdTopicIO {
   val client = SimpleClient()
   private lazy val topicIO = new TopicIO(client, "ordered_topics_by_conversation")
-  def apply() = topicIO 
+  def apply() = topicIO
 }
 
 class TopicIO(client: SimpleClient, table: String) extends QueryIO {
@@ -69,14 +69,15 @@ class TopicIO(client: SimpleClient, table: String) extends QueryIO {
     val threadId = row.getLong("thread_id")
     val subject = row.getString("subject")
     val ts = row.getLong("ts")
+    val emailCount = row.getLong("em_cnt")
     
-    Topic(id, recipientsHash, threadId, subject, ts)
+    Topic(id, recipientsHash, threadId, subject, ts, emailCount)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(user_id, recipients_hash, thread_id, subject, ts) " +
-    "VALUES (?, ?, ?, ?, ?);");
+    "(user_id, recipients_hash, thread_id, subject, ts, em_cnt) " +
+    "VALUES (?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -85,16 +86,17 @@ class TopicIO(client: SimpleClient, table: String) extends QueryIO {
   }
   
   def break(topic: Topic, boundStatement: BoundStatement): BoundStatement = {
-//    val set: java.util.Set[String] = conversation.recipients
     val threadId: java.lang.Long = topic.threadId
     val ts: java.lang.Long = topic.ts
+    val emailCount: java.lang.Long = topic.emailCount
 
     boundStatement.bind(
       topic.userId,
       topic.recipientsHash,
       threadId,
       topic.subject,
-      ts
+      ts,
+      emailCount
     )
   }
 }
