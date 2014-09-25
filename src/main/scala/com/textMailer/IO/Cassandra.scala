@@ -113,7 +113,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
         "user_id text," +
         "recipients_hash text," +
-        "recipients Set<text>," +
+        "recipients set<text>," +
         "ts bigint," +
         "email_account_id text," +
         "em_cnt bigint," +
@@ -125,7 +125,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_conversations_by_user (" +
         "user_id text," +
         "recipients_hash text," +
-        "recipients Set<text>," +
+        "recipients set<text>," +
         "ts bigint," +
         "email_account_id text," +
         "em_cnt bigint," +

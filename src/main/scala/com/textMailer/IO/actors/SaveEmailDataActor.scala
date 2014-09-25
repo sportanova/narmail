@@ -36,8 +36,7 @@ class SaveEmailDataActor extends Actor {
       val recipientsString = recipients.toString
       val recipientsHash = md5Hash(recipientsString)
       
-      // get futures started
-      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption})
+      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
       val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
       val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
@@ -56,13 +55,12 @@ class SaveEmailDataActor extends Actor {
       EmailTopicIO().asyncWrite(email)
       EmailConversationIO().asyncWrite(email)
       
-      val counts = for {
+      (for {
         te <- topicExists
         tc <- topicCount
         etc <- emailsByTopicCount
         ecc <- emailsByConversationCount
-      } yield(te, tc, etc, ecc)
-      counts onComplete {
+      } yield(te, tc, etc, ecc)) onComplete {
         case Success(c) => {
           val trueTopicCount = c._1 match {
             case Some(t) => c._2
@@ -79,6 +77,13 @@ class SaveEmailDataActor extends Actor {
         }
         case Failure(ex) => {
           println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FAILED TO GET COUNTS")
+          val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId, 0l, 0l) // do this last, give time to get topic count
+          ConversationIO().asyncWrite(conversation)
+          OrdConversationIO().asyncWrite(conversation)
+          
+          val topic = Topic(userId, recipientsHash, threadId, subject, ts, 0l)
+          TopicIO().asyncWrite(topic)
+          OrdTopicIO().asyncWrite(topic)
         }
       }
     }
@@ -86,7 +91,6 @@ class SaveEmailDataActor extends Actor {
   
   def md5Hash(str: String) = {
     val md = MessageDigest.getInstance("MD5")
-    
     md.reset()
     md.update(str.getBytes());
     val digest = md.digest()
