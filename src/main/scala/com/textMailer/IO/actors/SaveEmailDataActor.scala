@@ -37,8 +37,9 @@ class SaveEmailDataActor extends Actor {
       println(s"!!!!!!!!!!!! threadId: $threadId")
       
       // get futures started
-      val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c)
-      val emailCount = EmailIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c)
+      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption})
+      val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
+      val emailCount = EmailIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
       
       val textBody = body.get("text") match {
         case Some(t) => t.toString
@@ -55,6 +56,18 @@ class SaveEmailDataActor extends Actor {
       OrdTopicIO().asyncWrite(topic)
       val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
       EmailIO().asyncWrite(email)
+      
+      for {
+        te <- topicExists
+        tc <- topicCount
+        ec <- emailCount
+      } {
+        val trueTopicCount = te match {
+          case Some(t) => tc
+          case None => tc + 1l
+        }
+      }
+
       val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
       ConversationIO().asyncWrite(conversation)
       OrdConversationIO().asyncWrite(conversation)
