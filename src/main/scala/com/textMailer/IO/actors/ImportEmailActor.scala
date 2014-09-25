@@ -179,7 +179,6 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
   }
   
   def getText(m: Message): Map[String, Option[Object]] = {
-    println(s"%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW MESSAGE")
     val contentObject = m.getContent()
     if(contentObject.isInstanceOf[Multipart]) {
       val content: Multipart = contentObject.asInstanceOf[Multipart];

@@ -18,6 +18,8 @@ import com.textMailer.IO.OrdConversationIO
 import com.textMailer.IO.EmailTopicIO
 import com.textMailer.IO.EmailConversationIO
 import org.scalatra.Get
+import scala.util.Success
+import scala.util.Failure
 
 object SaveEmailDataActor {
   case class SaveData(userId: String, to: Set[String], cc: Set[String], bcc: Set[String], emailAddress: String, sender: String, subject: String, ts: Long, threadId: Long,
@@ -34,7 +36,7 @@ class SaveEmailDataActor extends Actor {
       val recipientsString = recipients.toString
       val recipientsHash = md5Hash(recipientsString)
       
-      // get futures started // TODO: move these into ImportEmailActor, get started earlier?
+      // get futures started
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption})
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
       val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
@@ -50,30 +52,35 @@ class SaveEmailDataActor extends Actor {
         case None => ""
       }
 
-//      val topic = Topic(userId, recipientsHash, threadId, subject, ts)
-//      TopicIO().asyncWrite(topic)
-//      OrdTopicIO().asyncWrite(topic)
       val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
       EmailTopicIO().asyncWrite(email)
       EmailConversationIO().asyncWrite(email)
       
-      for {
+      val counts = for {
         te <- topicExists
         tc <- topicCount
         etc <- emailsByTopicCount
         ecc <- emailsByConversationCount
-      } {
-        println(s"\n\n\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! emailsByTopicCount $etc")
-        println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! emailsByConversationCount $ecc")
-        val trueTopicCount = te match {
-          case Some(t) => tc
-          case None => tc + 1l
+      } yield(te, tc, etc, ecc)
+      counts onComplete {
+        case Success(c) => {
+          val trueTopicCount = c._1 match {
+            case Some(t) => c._2
+            case None => c._2 + 1l
+          }
+        
+          val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId, trueTopicCount, c._4) // do this last, give time to get topic count
+          ConversationIO().asyncWrite(conversation)
+          OrdConversationIO().asyncWrite(conversation)
+          
+          val topic = Topic(userId, recipientsHash, threadId, subject, ts, c._3)
+          TopicIO().asyncWrite(topic)
+          OrdTopicIO().asyncWrite(topic)
+        }
+        case Failure(ex) => {
+          println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FAILED TO GET COUNTS")
         }
       }
-
-//      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
-//      ConversationIO().asyncWrite(conversation)
-//      OrdConversationIO().asyncWrite(conversation)
     }
   }
   
