@@ -22,6 +22,7 @@ import org.scalatra.json._
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.{read, write}
+import com.textMailer.IO.EmailTopicIO
 
 class EmailRoutesSpec extends MutableScalatraSpec {
   val prepare = PrepareData()
@@ -41,8 +42,8 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1", 1l))
       val email1 = Email(123l, "someId", threadId, recipientsHash, None, 11l, "subject1", "sender1", "cc", "bcc", "emailBodyText", "emailBodyHtml")
       val email2 = Email(321l, "someId", threadId, recipientsHash, None, 12l, "subject1", "sender2", "cc", "bcc", "emailBodyText", "emailBodyHtml")
-      EmailIO().write(email1)
-      EmailIO().write(email2)
+      EmailTopicIO().write(email1)
+      EmailTopicIO().write(email2)
 
       get(s"/${user.id}/${threadId.toString}") {
         status must_== 200

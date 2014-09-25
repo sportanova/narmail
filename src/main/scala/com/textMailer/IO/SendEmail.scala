@@ -34,7 +34,7 @@ object SendEmail {
     email.recipients match {
       case Some(r) => {
         r.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
-        EmailIO().write(email) // TODO: figure out what to do with new messages - how do we get the threadid
+        EmailTopicIO().write(email) // TODO: figure out what to do with new messages - how do we get the threadid
 
         message.setSubject(email.subject);
         message.setText(email.textBody);

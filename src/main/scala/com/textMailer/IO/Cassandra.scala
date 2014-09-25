@@ -68,6 +68,23 @@ class SimpleClient() {
     ") with clustering order by (ts desc);")
     
     session.execute(
+    s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
+      "id bigint," +
+      "user_id text," +
+      "thread_id bigint," + // TODO: add account id?
+      "recipients_hash text," +
+      "recipients set<text>," +
+      "ts bigint," +
+      "subject text," +
+      "sender text," +
+      "cc text," +
+      "bcc text," +
+      "text_body text," +
+      "html_body text," +
+      "PRIMARY KEY((user_id, recipients_hash), ts, id)" +
+    ") with clustering order by (ts desc);")
+    
+    session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.new_emails_index (" +
       "user_id text," +
       "time text," +

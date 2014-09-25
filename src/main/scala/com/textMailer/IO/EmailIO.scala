@@ -15,14 +15,19 @@ import scala.util.Try
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object EmailIO {
+object EmailTopicIO {
   val client = SimpleClient()
-  private lazy val emailIO = new EmailIO(client)
+  private lazy val emailIO = new EmailIO(client, "emails_by_topic")
   def apply() = emailIO
 }
 
-class EmailIO(client: SimpleClient) extends QueryIO {
-  val table = "emails_by_topic"
+object EmailConversationIO {
+  val client = SimpleClient()
+  private lazy val emailIO = new EmailIO(client, "emails_by_conversation")
+  def apply() = emailIO
+}
+
+class EmailIO(client: SimpleClient, table: String) extends QueryIO {
   val session = client.getSession
   val keyspace = client.getKeyspace
 

@@ -9,6 +9,7 @@ import com.textMailer.IO.SendEmail
 import com.textMailer.IO.EmailAccountIO
 import scala.util.Success
 import scala.util.Failure
+import com.textMailer.IO.EmailTopicIO
 
 object EmailActor {
   case class GetEmailsForTopic(userId: Option[String], threadId: Option[String])
@@ -26,7 +27,7 @@ class EmailActor extends Actor {
         uid <- userId
         tid <- threadId
       } yield(uid, tid)) match {
-        case Some(ids) => EmailIO().asyncFind(List(Eq("user_id", ids._1), Eq("thread_id", ids._2.toLong)), 40)
+        case Some(ids) => EmailTopicIO().asyncFind(List(Eq("user_id", ids._1), Eq("thread_id", ids._2.toLong)), 40)
         case None => Future(List())
       }
 

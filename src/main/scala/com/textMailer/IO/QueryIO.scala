@@ -23,7 +23,7 @@ trait QueryIO {
   import cassandra.resultset._
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  // wrap in Try?
+  // TODO: wrap in Try?
   def curryFind[T <: CassandraClause, A <: Model](keyspace: String)(table: String)(build: Row => A)(session: Session)(clauses: List[T])( limit: Int): List[A] = {
     val query = QueryBuilder.select().all().from(keyspace,table).limit(limit)
     val queryWithClauses = addWhereClauses(query, clauses)

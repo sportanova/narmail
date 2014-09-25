@@ -15,6 +15,7 @@ import com.textMailer.IO.Eq
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.textMailer.IO.ConversationIO
 import com.textMailer.IO.OrdConversationIO
+import com.textMailer.IO.EmailTopicIO
 
 object SaveEmailDataActor {
   case class SaveData(userId: String, to: Set[String], cc: Set[String], bcc: Set[String], emailAddress: String, sender: String, subject: String, ts: Long, threadId: Long,
@@ -39,7 +40,7 @@ class SaveEmailDataActor extends Actor {
       // get futures started
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption})
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
-      val emailCount = EmailIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
+      val emailCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
       
       val textBody = body.get("text") match {
         case Some(t) => t.toString
@@ -55,7 +56,7 @@ class SaveEmailDataActor extends Actor {
       TopicIO().asyncWrite(topic)
       OrdTopicIO().asyncWrite(topic)
       val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
-      EmailIO().asyncWrite(email)
+      EmailTopicIO().asyncWrite(email)
       
       for {
         te <- topicExists

@@ -126,7 +126,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     
     newLastUID match {
       case newUID if newUID == lastEmailUid.getOrElse(0l) => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
-      case _ => writeMessages(messages, folder, userId, emailAddress, emailAccountId)
+      case _ => messages.map(m => extractBody(m, folder, userId, emailAddress, emailAccountId))
     }
 
     folder.close(false)
@@ -134,57 +134,49 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map("uid" -> newLastUID.toString)))
   }
   
-  def writeMessages(messages: Seq[javax.mail.Message], folder: GmailFolder, userId: String, emailAddress: String, emailAccountId: String): Unit = {
-    messages.map(m => {
-      val gm = m.asInstanceOf[GmailMessage]
-      val gmId = gm.getMsgId()
-      val uid = folder.getUID(gm)
-      println(s"########## uid $uid")
-      val body = getText(m)
-      
-//            println(s"<<<<<<<<<<<< text $text")
-//            println(s"<<<<<<<<<<<< html $html")
+  def extractBody(message: javax.mail.Message, folder: GmailFolder, userId: String, emailAddress: String, emailAccountId: String): Unit = {
+    val gm = message.asInstanceOf[GmailMessage]
+    val gmId = gm.getMsgId()
+    
+    val uid = folder.getUID(gm) // TODO: use env var to make this only run on local. only useful for test purposes
+    println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! UID $uid")
+    
 
-      val emailId = UUIDs.random
-      
-      val threadId = gm.getThrId()
+    val body = getText(message)
+    val threadId = gm.getThrId()
 
-      val sender = m.getFrom() match {
-        case null => ""
-        case Array() => ""
-        case a => InternetAddress.parse(a(0).toString)(0).getAddress
-      }
-//            println(s"################### sender $sender")
-      
-      // TODO: should to cc and bcc be Sets?
-      
-      val to = m.getRecipients(Message.RecipientType.TO) match {
-        case null => Set()
-        case Array() => Set()
-        case to => InternetAddress.parse(to(0).toString)(0).getAddress.split(",").toSet
-      }
+    val sender = message.getFrom() match {
+      case null => ""
+      case Array() => ""
+      case a => InternetAddress.parse(a(0).toString)(0).getAddress
+    }
+    
+    val to = message.getRecipients(Message.RecipientType.TO) match {
+      case null => Set()
+      case Array() => Set()
+      case to => InternetAddress.parse(to(0).toString)(0).getAddress.split(",").toSet
+    }
 
-      val cc = m.getRecipients(Message.RecipientType.CC) match {
-        case null => Set()
-        case Array() => Set()
-        case cc => InternetAddress.parse(cc(0).toString)(0).getAddress.split(",").toSet
-      }
+    val cc = message.getRecipients(Message.RecipientType.CC) match {
+      case null => Set()
+      case Array() => Set()
+      case cc => InternetAddress.parse(cc(0).toString)(0).getAddress.split(",").toSet
+    }
 
-      val bcc = m.getRecipients(Message.RecipientType.BCC) match {
-        case null => Set()
-        case Array() => Set()
-        case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
-      }
+    val bcc = message.getRecipients(Message.RecipientType.BCC) match {
+      case null => Set()
+      case Array() => Set()
+      case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
+    }
 
-      val subject = m.getSubject() match {
-        case null => ""
-        case x: String => x
-      }
-      
-      val ts = m.getSentDate().getMillis
+    val subject = message.getSubject() match {
+      case null => ""
+      case x: String => x
+    }
+    
+    val ts = message.getSentDate().getMillis
 
-      saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, body)
-    })
+    saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, body)
   }
   
   def getText(m: Message): Map[String, Option[Object]] = {
