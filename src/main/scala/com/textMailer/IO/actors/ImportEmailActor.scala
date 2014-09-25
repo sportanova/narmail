@@ -36,6 +36,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import akka.util.Timeout
 import akka.actor.Props
 import com.textMailer.IO.actors.SaveEmailDataActor.SaveData
+import javax.mail.FetchProfile
+import javax.mail.search.FlagTerm
+import javax.mail.Flags
+import javax.mail.Flags.Flag
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])
@@ -95,23 +99,26 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- ue.data.get("uid") // Some(15725l)
+      uid <- Some(15760l) // ue.data.get("uid") // Some(15725l)
     } yield uid.toLong)
+    
+    val fp: FetchProfile = new FetchProfile();
+    fp.add(FetchProfile.Item.ENVELOPE);
 
-    val messageCount50 = folder.getMessageCount - 50
-   
     println(s"################### lastEmailUid $lastEmailUid")
 
     folder.open(Folder.READ_WRITE);
 
-    val messages = lastEmailUid match {
-      case Some(uid) => folder.getMessagesByUID(uid, LASTUID).toList
+    lastEmailUid match {
+      case Some(uid) => folder.fetch(folder.getMessagesByUID(uid, LASTUID), fp)
       case None => {
         val date = (new DateTime).minusDays(0).toDate()
         val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
-        folder.search(olderThan).toList
+        folder.fetch(folder.search(olderThan), fp) // TODO: test this
       }
     }
+
+    val messages = folder.getMessagesByUID(lastEmailUid.get, LASTUID)
     println(s"!!!!!!!!!!!!!!!!!! messages.size ${messages.size}")
 
     val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
@@ -134,21 +141,6 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       val uid = folder.getUID(gm)
       println(s"########## uid $uid")
       val body = getText(m)
-      val text = (for{
-        textValue <- body.get("text")
-        text <- textValue
-      } yield(text)) match {
-        case Some(t) => t.toString
-        case None => "no text"
-      }
-      
-      val html = (for{
-        htmlValue <- body.get("html")
-        html <- htmlValue
-      } yield(html)) match {
-        case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
-        case None => ""
-      }
       
 //            println(s"<<<<<<<<<<<< text $text")
 //            println(s"<<<<<<<<<<<< html $html")
@@ -184,10 +176,6 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
         case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
       }
 
-//            println(s"################### to ${to}")
-//            println(s"################### cc ${cc}")
-//            println(s"################### bcc $bcc")
-
       val subject = m.getSubject() match {
         case null => ""
         case x: String => x
@@ -195,7 +183,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       
       val ts = m.getSentDate().getMillis
 
-      saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, text, html)
+      saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, body)
     })
   }
   
@@ -223,4 +211,3 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     } else Map()
   }
 }
-
