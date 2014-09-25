@@ -16,6 +16,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.textMailer.IO.ConversationIO
 import com.textMailer.IO.OrdConversationIO
 import com.textMailer.IO.EmailTopicIO
+import com.textMailer.IO.EmailConversationIO
+import org.scalatra.Get
 
 object SaveEmailDataActor {
   case class SaveData(userId: String, to: Set[String], cc: Set[String], bcc: Set[String], emailAddress: String, sender: String, subject: String, ts: Long, threadId: Long,
@@ -30,17 +32,13 @@ class SaveEmailDataActor extends Actor {
       val recipients: TreeSet[String] = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
       println(s"@@@@@@@@@@@ recipientsSet $recipients")
       val recipientsString = recipients.toString
-      println(s"@@@@@@@@@@@ recipientsString $recipientsString")
       val recipientsHash = md5Hash(recipientsString)
-      println(s"############## hashText $recipientsHash")
-      println(s"############## timestamp $ts \n\n\n")
-      println(s"!!!!!!!!!!!! subject: $subject")
-      println(s"!!!!!!!!!!!! threadId: $threadId")
       
-      // get futures started
+      // get futures started // TODO: move these into ImportEmailActor, get started earlier?
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption})
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
-      val emailCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
+      val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
+      val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
       
       val textBody = body.get("text") match {
         case Some(t) => t.toString
@@ -57,12 +55,16 @@ class SaveEmailDataActor extends Actor {
       OrdTopicIO().asyncWrite(topic)
       val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
       EmailTopicIO().asyncWrite(email)
+      EmailConversationIO().asyncWrite(email)
       
       for {
         te <- topicExists
         tc <- topicCount
-        ec <- emailCount
+        etc <- emailsByTopicCount
+        ecc <- emailsByConversationCount
       } {
+        println(s"\n\n\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! emailsByTopicCount $etc")
+        println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! emailsByConversationCount $ecc")
         val trueTopicCount = te match {
           case Some(t) => tc
           case None => tc + 1l

@@ -99,7 +99,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- ue.data.get("uid") // Some(15760l)
+      uid <- Some(15760l) // ue.data.get("uid") // Some(15760l)
     } yield uid.toLong)
     
     val fp: FetchProfile = new FetchProfile();
@@ -139,8 +139,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val gmId = gm.getMsgId()
     
     val uid = folder.getUID(gm) // TODO: use env var to make this only run on local. only useful for test purposes
-    println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! UID $uid")
-    
+    println(s"UIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUID $uid")
 
     val body = getText(message)
     val threadId = gm.getThrId()
