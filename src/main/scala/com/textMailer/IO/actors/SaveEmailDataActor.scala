@@ -71,9 +71,9 @@ class SaveEmailDataActor extends Actor {
         }
       }
 
-      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
-      ConversationIO().asyncWrite(conversation)
-      OrdConversationIO().asyncWrite(conversation)
+//      val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId) // do this last, give time to get topic count
+//      ConversationIO().asyncWrite(conversation)
+//      OrdConversationIO().asyncWrite(conversation)
     }
   }
   

@@ -56,14 +56,16 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
     val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String]
     val ts = row.getLong("ts")
     val emailAccountId = row.getString("email_account_id")
+    val topicCount = row.getLong("tp_cnt")
+    val emailCount = row.getLong("em_cnt")
     
-    Conversation(userId, recipientsHash, recipients, ts, emailAccountId)
+    Conversation(userId, recipientsHash, recipients, ts, emailAccountId, topicCount, emailCount)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(user_id,recipients_hash, recipients, ts, email_account_id) " +
-    "VALUES (?, ?, ?, ?, ?);");
+    "(user_id,recipients_hash, recipients, ts, email_account_id, tp_cnt, em_cnt) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -72,14 +74,17 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
   }
   
   def break(conversation: Conversation, boundStatement: BoundStatement): BoundStatement = {
-    val date = conversation.ts
+    val topicCount: java.lang.Long = conversation.topicCount
+    val emailCount: java.lang.Long = conversation.emailCount
 
     boundStatement.bind(
       conversation.userId,
       conversation.recipientsHash,
       setAsJavaSet(conversation.recipients),
       conversation.ts.asInstanceOf[java.lang.Long],
-      conversation.emailAccountId
+      conversation.emailAccountId,
+      topicCount,
+      emailCount
     )
   }
 }

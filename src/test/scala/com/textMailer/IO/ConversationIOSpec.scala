@@ -14,7 +14,7 @@ class ConversationIOSpec extends MutableScalatraSpec {
 
   "EmailIO.write" should {
     "write to the db" in {
-      val conversation = Conversation("someUserId", "sportano@gmail.com", Set("sportano@gmail.com"), {new DateTime}.getMillis, "123")
+      val conversation = Conversation("someUserId", "sportano@gmail.com", Set("sportano@gmail.com"), {new DateTime}.getMillis, "123", 1l, 3l)
       val writtenConversation = ConversationIO().write(conversation)
       val foundConversations = ConversationIO().find(List(Eq("user_id","someUserId"), Eq("recipients_hash","sportano@gmail.com")), 10)
       foundConversations.headOption.get.userId === "someUserId"

@@ -116,8 +116,8 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "email_account_id text," +
-//        "em_cnt bigint," +
-//        "tp_cnt bigint," +
+        "em_cnt bigint," +
+        "tp_cnt bigint," +
         "PRIMARY KEY(user_id, recipients_hash)" +
     ");")
     
@@ -128,8 +128,8 @@ class SimpleClient() {
         "recipients Set<text>," +
         "ts bigint," +
         "email_account_id text," +
-//        "em_cnt bigint," +
-//        "tp_cnt bigint," +
+        "em_cnt bigint," +
+        "tp_cnt bigint," +
         "PRIMARY KEY((user_id), ts)" +
     ") with clustering order by (ts desc);") // TODO: add ttl
     

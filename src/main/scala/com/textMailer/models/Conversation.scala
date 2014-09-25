@@ -8,5 +8,7 @@ case class Conversation (
   recipientsHash: String,
   recipients: Set[String],
   ts: Long,
-  emailAccountId: String
+  emailAccountId: String,
+  topicCount: Long,
+  emailCount: Long
 ) extends Model
