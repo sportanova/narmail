@@ -99,7 +99,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- Some(15760l) // ue.data.get("uid") // Some(15725l)
+      uid <- ue.data.get("uid") // Some(15760l)
     } yield uid.toLong)
     
     val fp: FetchProfile = new FetchProfile();
