@@ -41,12 +41,18 @@ class SaveEmailDataActor extends Actor {
       val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
       val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
       
-      val textBody = body.get("text") match {
+      val textBody = (for{
+        textValue <- body.get("text")
+        text <- textValue
+      } yield(text)) match {
         case Some(t) => t.toString
         case None => ""
       }
       
-      val htmlBody = body.get("html") match {
+      val htmlBody = (for{
+        htmlValue <- body.get("html")
+        html <- htmlValue
+      } yield(html)) match {
         case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
         case None => ""
       }
