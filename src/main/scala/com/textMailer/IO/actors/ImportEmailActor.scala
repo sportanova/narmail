@@ -109,16 +109,18 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
 
     folder.open(Folder.READ_WRITE);
 
-    lastEmailUid match {
-      case Some(uid) => folder.fetch(folder.getMessagesByUID(uid, LASTUID), fp)
+    val messages = lastEmailUid match {
+      case Some(uid) => {
+        folder.fetch(folder.getMessagesByUID(uid, LASTUID), fp)
+        folder.getMessagesByUID(uid, LASTUID)
+      }
       case None => {
-        val date = (new DateTime).minusDays(0).toDate()
-        val olderThan = new ReceivedDateTerm(ComparisonTerm.GT, date);
-        folder.fetch(folder.search(olderThan), fp)
+        val messageCount = folder.getMessageCount
+        folder.fetch(folder.getMessages(messageCount - 50, messageCount), fp)
+        folder.getMessages(messageCount - 50, messageCount);
       }
     }
 
-    val messages = folder.getMessagesByUID(lastEmailUid.get, LASTUID)
     println(s"!!!!!!!!!!!!!!!!!! messages.size ${messages.size}")
 
     val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
