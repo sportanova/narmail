@@ -40,6 +40,15 @@ import javax.mail.FetchProfile
 import javax.mail.search.FlagTerm
 import javax.mail.Flags
 import javax.mail.Flags.Flag
+import javax.mail.Part
+import com.stackmob.newman.{ETagAwareHttpClient, ApacheHttpClient}
+import com.stackmob.newman._
+import com.stackmob.newman.caching.InMemoryHttpResponseCacher
+import com.stackmob.newman.dsl._
+import com.stackmob.newman.response.HttpResponse
+import java.net.URL
+import net.liftweb.json.JsonParser
+import com.textMailer.IO.actors.SaveEmailDataActor.GetGmailMessage
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])
@@ -48,8 +57,8 @@ object ImportEmailActor {
 
 class ImportEmailActor extends Actor { // TODO: make this actor into it's own service, that consumes a user id from a queue
   import com.textMailer.IO.actors.ImportEmailActor._
-  
-  implicit val timeout = Timeout(4000)
+  implicit val httpClient = new ApacheHttpClient
+  implicit val timeout = Timeout(8000)
   val saveEmailDataActor = context.actorOf(Props[SaveEmailDataActor], "SaveEmailDataActor")
 
   def receive = {
@@ -59,9 +68,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => {
-        importGmail(ea.userId, ea.username, ea.accessToken, ea.id)
-      })
+      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id))
     }
     case ImportEmail(userId) => { // TODO: Add time as param, so can continually get latest, unchecked emails??
       val emailAccounts = userId match {
@@ -78,6 +85,21 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       sender ! emailAccounts // why am i sending this back?
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
+  }
+  
+  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
+    val messagesUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=10")
+    val messagesReq = GET(messagesUrl).addHeaders(("authorization", s"Bearer $accessToken"))
+    val messagesRes = messagesReq.apply.map(res => {
+
+    (for {
+        body <- res.toJValue.values.asInstanceOf[Map[String,Any]].get("body")
+        messages <- JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]].get("messages")
+      } yield(messages.asInstanceOf[List[Map[String,String]]])) match {
+        case Some(ms) => ms.foreach(m => saveEmailDataActor ! GetGmailMessage(m, gmailUserId, accessToken))
+        case None => Unit
+      }
+    })
   }
   
   def importGmail(userId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
@@ -99,7 +121,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val currentDateTime = new DateTime
     val lastEmailUid = (for {
       ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- ue.data.get("uid") // Some(15760l)
+      uid <- ue.data.get("uid") // Some(15794l)
     } yield uid.toLong)
     
     val fp: FetchProfile = new FetchProfile();
@@ -141,9 +163,14 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val gmId = gm.getMsgId()
     
     val uid = folder.getUID(gm) // TODO: use env var to make this only run on local. only useful for test purposes
-    println(s"UIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUID $uid")
+//    println(s"UIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUID $uid")
 
     val body = getText(message)
+//    val testBody = getText2(message).map(m => { m._2 match {
+//      case None => s"!!!!!!!!!!!!! DIDN'T FIND ANYTHING"
+//      case Some(s) => s"==================== FOUND SOMETHING!!! $s"
+//    }})
+//    println(s"########### testBody $testBody")
     val threadId = gm.getThrId()
 
     val sender = message.getFrom() match {
@@ -180,6 +207,58 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, body)
   }
   
+  def getText2(p: Part): Map[String, Option[String]] = {
+    var htmlBody: Option[String] = None
+    var textBody: Option[String] = None
+
+    if (p.isMimeType("text/*")) {
+        p.getContent().asInstanceOf[String];
+    }
+    if (p.isMimeType("multipart/alternative")) {
+        // prefer html text over plain text
+        val mp = p.getContent().asInstanceOf[Multipart];
+        var text: String = null;
+        for(i <- 0 to mp.getCount() - 1) {
+//          println(s"@@@@@@@@@@@@@@@ first i $i")
+            val bp = mp.getBodyPart(i);
+            if (bp.isMimeType("text/plain")) {
+                if (text == null)
+                    println(s"%%%%%%%%%%%%%%%%% is Text!!!")
+                    textBody = getText3(bp)
+//                continue;
+            } else if (bp.isMimeType("text/html")) {
+                val s = getText3(bp);
+                if (s != null)
+                  println(s"&&&&&&&&&&&&&&&&&&& is HTML!!!")
+                    htmlBody = s;
+            } else {
+                textBody = getText3(bp);
+            }
+        }
+    } else if (p.isMimeType("multipart/*")) {
+        val mp = p.getContent.asInstanceOf[Multipart];
+        for (i <- 0 to mp.getCount() - 1) {
+//          println(s"@@@@@@@@@@@@@@@ second i $i")
+          val s = getText3(mp.getBodyPart(i))
+          if (s != null) {
+            println(s"############### s in 3 if")
+            textBody = s;
+          }
+        }
+    }
+    
+    Map("html" -> htmlBody, "text" -> textBody)
+  }
+  
+  def getText3(p: Part): Option[String] = {
+    if (p.isMimeType("text/*")) {
+      val s = p.getContent().toString
+//      println(s"############### s $s")
+//        textIsHtml = p.isMimeType("text/html");
+      Some(s);
+    } else None
+  }
+  
   def getText(m: Message): Map[String, Option[Object]] = {
     val contentObject = m.getContent()
     if(contentObject.isInstanceOf[Multipart]) {
@@ -188,6 +267,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       
       var html: Option[Object] = None
       var text: Option[Object] = None
+      var somethingElse: Option[Object] = None
       
       breakable {for(i <- 0 to count) {
         val part = content.getBodyPart(i);

@@ -42,6 +42,9 @@ class AccessTokenActor extends Actor {
     case redirect: String => redirect
     case null => "http://localhost:8080/oauth/oauth2callback"
   }
+  
+  // TODO: make call to get gmail user_id
+  // https://www.googleapis.com/oauth2/v1/tokeninfo?id_token=
 
   def receive = {
     case AddGmailAccount(userId, accessCode) => {  // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
@@ -118,6 +121,8 @@ class AccessTokenActor extends Actor {
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(gmailOauthRedirect, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
     val json = Await.result(req.apply, 10.second).toJValue
+    
+    println(s"############## json $json")
 
     for {
       body <- json.values.asInstanceOf[Map[String,Any]].get("body")
@@ -131,6 +136,8 @@ class AccessTokenActor extends Actor {
     val url = new URL("https://www.googleapis.com/userinfo/email?alt=json")
     val req = GET(url).addHeaders(("authorization", s"Bearer $accessToken"))
     val res = Await.result(req.apply, 10.second).toJValue
+    
+    println(s"############## res $res")
 
     for {
       body <- res.values.asInstanceOf[Map[String,Any]].get("body")

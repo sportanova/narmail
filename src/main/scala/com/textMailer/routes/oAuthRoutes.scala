@@ -50,6 +50,7 @@ class OAuthRoutes (system: ActorSystem, accessTokenActor: ActorRef) extends Scal
   }
   
   get("/oauth2callback") {
+    println(s"####################### params $params")
     val userId = params.get("state")
     val accessCode = params.get("code")
     val newUser = accessTokenActor ? AddGmailAccount(userId, accessCode)
