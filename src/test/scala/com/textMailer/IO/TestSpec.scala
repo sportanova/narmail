@@ -12,6 +12,8 @@ import scala.actors.Futures
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.binary.StringUtils;
 import net.liftweb.json.JsonParser
+import annotation.tailrec
+import net.liftweb.json.JsonAST.JValue
 
 class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   PrepareData()
@@ -423,7 +425,7 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
 //          parts <- payload.asInstanceOf[Map[String,Any]].get("parts")
 //            messages <- JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]].get("messages")
       } yield(payload, headers))
-      println(s"########## message ${message.get._1}")
+//      println(s"########## message ${message.get._1}")
       
 //      val subject = message.get._2.find(h => h.)
       
@@ -450,8 +452,320 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
         case None => ""
       }
       
-      println(s"############ textBody $textBody")
-      println(s"############ htmlBody $htmlBody")
+//      println(s"############ textBody $textBody")
+//      println(s"############ htmlBody $htmlBody")
+    }
+    
+    "this" in {
+      val json = """{
+  "id":"148ca8c6ce166dca",
+  "threadId":"148c7d884156b4d2",
+  "labelIds":["CATEGORY_FORUMS","UNREAD","Label_10"],
+  "snippet":"Looks like a configuration issue, can you paste your spark-env.sh on the worker? Thanks Best Regards",
+  "historyId":"1907939",
+  "payload":{
+    "mimeType":"multipart/alternative",
+    "filename":"",
+    "headers":[{
+      "name":"Delivered-To",
+      "value":"sportano@gmail.com"
+    },{
+      "name":"Received",
+      "value":"by 10.60.60.73 with SMTP id f9csp246735oer;        Wed, 1 Oct 2014 00:11:13 -0700 (PDT)"
+    },{
+      "name":"X-Received",
+      "value":"by 10.70.128.75 with SMTP id nm11mr2504257pdb.164.1412147473529;        Wed, 01 Oct 2014 00:11:13 -0700 (PDT)"
+    },{
+      "name":"Return-Path",
+      "value":"<user-return-17159-sportano=gmail.com@spark.apache.org>"
+    },{
+      "name":"Received",
+      "value":"from mail.apache.org (hermes.apache.org. [140.211.11.3])        by mx.google.com with SMTP id uz1si29104363pac.182.2014.10.01.00.11.13        for <sportano@gmail.com>;        Wed, 01 Oct 2014 00:11:13 -0700 (PDT)"
+    },{
+      "name":"Received-SPF",
+      "value":"pass (google.com: domain of user-return-17159-sportano=gmail.com@spark.apache.org designates 140.211.11.3 as permitted sender) client-ip=140.211.11.3;"
+    },{
+      "name":"Authentication-Results",
+      "value":"mx.google.com;       spf=pass (google.com: domain of user-return-17159-sportano=gmail.com@spark.apache.org designates 140.211.11.3 as permitted sender) smtp.mail=user-return-17159-sportano=gmail.com@spark.apache.org"
+    },{
+      "name":"Received",
+      "value":"(qmail 89729 invoked by uid 500); 1 Oct 2014 07:11:12 -0000"
+    },{
+      "name":"Mailing-List",
+      "value":"contact user-help@spark.apache.org; run by ezmlm"
+    },{
+      "name":"Precedence",
+      "value":"bulk"
+    },{
+      "name":"List-Help",
+      "value":"<mailto:user-help@spark.apache.org>"
+    },{
+      "name":"List-Unsubscribe",
+      "value":"<mailto:user-unsubscribe@spark.apache.org>"
+    },{
+      "name":"List-Post",
+      "value":"<mailto:user@spark.apache.org>"
+    },{
+      "name":"List-Id",
+      "value":"<user.spark.apache.org>"
+    },{
+      "name":"Delivered-To",
+      "value":"mailing list <user@spark.apache.org>"
+    },{
+      "name":"Received",
+      "value":"(qmail 89719 invoked by uid 99); 1 Oct 2014 07:11:12 -0000"
+    },{
+      "name":"Received",
+      "value":"from nike.apache.org (HELO nike.apache.org) (192.87.106.230)    by apache.org (qpsmtpd/0.29) with ESMTP; Wed, 01 Oct 2014 07:11:12 +0000"
+    },{
+      "name":"X-ASF-Spam-Status",
+      "value":"No, hits=3.4 required=5.0 tests=HTML_MESSAGE,MISSING_HEADERS,RCVD_IN_DNSWL_LOW,SPF_NEUTRAL"
+    },{
+      "name":"X-Spam-Check-By",
+      "value":"apache.org"
+    },{
+      "name":"Received-SPF",
+      "value":"neutral (nike.apache.org: local policy)"
+    },{
+      "name":"Received",
+      "value":"from [209.85.217.169] (HELO mail-lb0-f169.google.com) (209.85.217.169)    by apache.org (qpsmtpd/0.29) with ESMTP; Wed, 01 Oct 2014 07:10:46 +0000"
+    },{
+      "name":"Received",
+      "value":"by mail-lb0-f169.google.com with SMTP id 10so195760lbg.28        for <user@spark.apache.org>; Wed, 01 Oct 2014 00:10:45 -0700 (PDT)"
+    },{
+      "name":"X-Google-DKIM-Signature",
+      "value":"v=1; a=rsa-sha256; c=relaxed/relaxed;        d=1e100.net; s=20130820;        h=x-gm-message-state:mime-version:in-reply-to:references:date         :message-id:subject:from:cc:content-type;        bh=oP7Wh8QtOe1j8D7zPx53/PFmffQswfctGHRSbt9AYik=;        b=PvEESQWGQisxdS+QSRyQi2zaAESUc9e422wIYmIH4ZWE3CQJS6pY+x5GGY8Zzz1Rqu         J+pzi7jaRvOVKsFfrAm3SCnXnaSz7xkZczGw6YBqkdSSR2MZZuAmk42L8IgsUX7gXP+P         xvLD3fs8pCPk9UwwskfvK3q4tPOmCldtqayv8IYtL0AW1ZcWPaCzlLLiH5k+N5+HLEnG         pffMRFCtGU8O0XknZArTIwLosTdbPtAsWNyFoj0mPz/Lw0V5S2+uXTQdaT8bTrPREGJf         LSYuP7r+zv+NKGMOmPIA4bQaOjmssvy9wdtI+G62McsKfIiGIhJkzslOx7/0LCT0xvRN         JRWw=="
+    },{
+      "name":"X-Gm-Message-State",
+      "value":"ALoCoQl1VzuvAuzQ79npisMMdWgSHAO0hNgnMLraXBMGJlxnoNKloiqVO1gmSPMyZx49FpbPM1oA"
+    },{
+      "name":"MIME-Version",
+      "value":"1.0"
+    },{
+      "name":"X-Received",
+      "value":"by 10.112.161.70 with SMTP id xq6mt29698517lbb.49.1412147445271; Wed, 01 Oct 2014 00:10:45 -0700 (PDT)"
+    },{
+      "name":"Received",
+      "value":"by 10.152.7.97 with HTTP; Wed, 1 Oct 2014 00:10:45 -0700 (PDT)"
+    },{
+      "name":"In-Reply-To",
+      "value":"<CAMwrk0=TC27=ESHZ0f3EgzaqD-BRVQGzBzP53_Q3hOR3EUbwJA@mail.gmail.com>"
+    },{
+      "name":"References",
+      "value":"<CAJmq4GMb5sMTmV6UVXg77676wP-RA4=WPJ4cGRywH3VNzkwy_Q@mail.gmail.com> <CAMwrk0nGpkOydBfcLn4iioLQo_A-0CJ1E+v2k4xeQ9CahGihow@mail.gmail.com> <CAJmq4GNca5VH3R9nuhY=6pHM9dY7xeRj-Sw8eu1eYNr8g4Pimg@mail.gmail.com> <CAMwrk0=TC27=ESHZ0f3EgzaqD-BRVQGzBzP53_Q3hOR3EUbwJA@mail.gmail.com>"
+    },{
+      "name":"Date",
+      "value":"Wed, 1 Oct 2014 12:40:45 +0530"
+    },{
+      "name":"Message-ID",
+      "value":"<CAHUQ+_ap3p4_hMgYFm9aUY-bbCn_hpSvPOiL-UtGh0e67jj=rw@mail.gmail.com>"
+    },{
+      "name":"Subject",
+      "value":"Re: Multiple exceptions in Spark Streaming"
+    },{
+      "name":"From",
+      "value":"Akhil Das <akhil@sigmoidanalytics.com>"
+    },{
+      "name":"Cc",
+      "value":"Shaikh Riyaz <shaikh.r.a@gmail.com>, \"user@spark.apache.org\" <user@spark.apache.org>, Dibyendu Bhattacharya <dibyendu.bhattachary@gmail.com>"
+    },{
+      "name":"Content-Type",
+      "value":"multipart/alternative; boundary=001a11c25944d9b0aa0504573296"
+    },{
+      "name":"X-Virus-Checked",
+      "value":"Checked by ClamAV on apache.org"
+    }],
+    "body":{
+      "size":0
+    },
+    "parts":[{
+      "partId":"0",
+      "mimeType":"text/plain",
+      "filename":"",
+      "headers":[{
+        "name":"Content-Type",
+        "value":"text/plain; charset=UTF-8"
+      }],
+      "body":{
+        "size":4116,
+        "data":"TG9va3MgbGlrZSBhIGNvbmZpZ3VyYXRpb24gaXNzdWUsIGNhbiB5b3UgcGFzdGUgeW91ciBzcGFyay1lbnYuc2ggb24gdGhlDQp3b3JrZXI_DQoNClRoYW5rcw0KQmVzdCBSZWdhcmRzDQoNCk9uIFdlZCwgT2N0IDEsIDIwMTQgYXQgODoyNyBBTSwgVGF0aGFnYXRhIERhcyA8dGF0aGFnYXRhLmRhczE1NjVAZ21haWwuY29tPg0Kd3JvdGU6DQoNCj4gSXQgd291bGQgaGVscCB0byB0dXJuIG9uIGRlYnVnIGxldmVsIGxvZ2dpbmcgaW4gbG9nNGogYW5kIHNlZSB0aGUgbG9ncy4NCj4gSnVzdCBsb29raW5nIGF0IHRoZSBlcnJvciBsb2dzIGlzIG5vdCBnaXZpbmcgbWUgYW55IHNlbnNlLiA6KA0KPg0KPiBURA0KPg0KPiBPbiBUdWUsIFNlcCAzMCwgMjAxNCBhdCA0OjMwIFBNLCBTaGFpa2ggUml5YXogPHNoYWlraC5yLmFAZ21haWwuY29tPg0KPiB3cm90ZToNCj4NCj4-IEhpIFRELA0KPj4NCj4-IFRoYW5rcyBmb3IgeW91ciByZXBseS4NCj4-DQo-PiBBdHRhY2htZW50IGluIHByZXZpb3VzIGVtYWlsIHdhcyBmcm9tIE1hc3Rlci4NCj4-DQo-PiBCZWxvdyBpcyB0aGUgbG9nIG1lc3NhZ2UgZnJvbSBvbmUgb2YgdGhlIHdvcmtlci4NCj4-DQo-PiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KPj4gMjAxNC0xMC0wMSAwMTo0OToyMiwzNDggRVJST1IgYWtrYS5yZW1vdGUuRW5kcG9pbnRXcml0ZXI6DQo-PiBBc3NvY2lhdGlvbkVycm9yIFtha2thLnRjcDovL3NwYXJrV29ya2VyQCo8d29ya2VyND4qOjcwNzhdIC0-DQo-PiBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQCo8d29ya2VyND4qOjM0MDEwXTogRXJyb3IgW0Fzc29jaWF0aW9uIGZhaWxlZA0KPj4gd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQCo8d29ya2VyND4qOjM0MDEwXV0gWw0KPj4gYWtrYS5yZW1vdGUuRW5kcG9pbnRBc3NvY2lhdGlvbkV4Y2VwdGlvbjogQXNzb2NpYXRpb24gZmFpbGVkIHdpdGgNCj4-IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAKjx3b3JrZXI0Pio6MzQwMTBdDQo-PiBDYXVzZWQgYnk6DQo-PiBha2thLnJlbW90ZS50cmFuc3BvcnQubmV0dHkuTmV0dHlUcmFuc3BvcnQkJGFub25mdW4kYXNzb2NpYXRlJDEkJGFub24kMjoNCj4-IENvbm5lY3Rpb24gcmVmdXNlZDogKjx3b3JrZXI0Pio6MzQwMTANCj4-IF0NCj4-IDIwMTQtMTAtMDEgMDI6MTQ6NTQsODY4IEVSUk9SIGFra2EucmVtb3RlLkVuZHBvaW50V3JpdGVyOg0KPj4gQXNzb2NpYXRpb25FcnJvciBbYWtrYS50Y3A6Ly9zcGFya1dvcmtlckAqPHdvcmtlcjQ-Kjo3MDc4XSAtPg0KPj4gW2Fra2EudGNwOi8vc3BhcmtFeGVjdXRvckAqPHdvcmtlcjQ-KjozMzE4NF06IEVycm9yIFtBc3NvY2lhdGlvbiBmYWlsZWQNCj4-IHdpdGggW2Fra2EudGNwOi8vc3BhcmtFeGVjdXRvckAqPHdvcmtlcjQ-KjozMzE4NF1dIFsNCj4-IGFra2EucmVtb3RlLkVuZHBvaW50QXNzb2NpYXRpb25FeGNlcHRpb246IEFzc29jaWF0aW9uIGZhaWxlZCB3aXRoDQo-PiBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQCo8d29ya2VyND4qOjMzMTg0XQ0KPj4gQ2F1c2VkIGJ5Og0KPj4gYWtrYS5yZW1vdGUudHJhbnNwb3J0Lm5ldHR5Lk5ldHR5VHJhbnNwb3J0JCRhbm9uZnVuJGFzc29jaWF0ZSQxJCRhbm9uJDI6DQo-PiBDb25uZWN0aW9uIHJlZnVzZWQ6ICo8d29ya2VyND4qOjMzMTg0DQo-PiBdDQo-PiAyMDE0LTEwLTAxIDAyOjE0OjU0LDg3OCBFUlJPUiBha2thLnJlbW90ZS5FbmRwb2ludFdyaXRlcjoNCj4-IEFzc29jaWF0aW9uRXJyb3IgW2Fra2EudGNwOi8vc3BhcmtXb3JrZXJAKjx3b3JrZXI0Pio6NzA3OF0gLT4NCj4-IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAKjx3b3JrZXI0Pio6MzMxODRdOiBFcnJvciBbQXNzb2NpYXRpb24gZmFpbGVkDQo-PiB3aXRoIFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAKjx3b3JrZXI0Pio6MzMxODRdXSBbDQo-PiBha2thLnJlbW90ZS5FbmRwb2ludEFzc29jaWF0aW9uRXhjZXB0aW9uOiBBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aA0KPj4gW2Fra2EudGNwOi8vc3BhcmtFeGVjdXRvckAqPHdvcmtlcjQ-KjozMzE4NF0NCj4-IENhdXNlZCBieToNCj4-IGFra2EucmVtb3RlLnRyYW5zcG9ydC5uZXR0eS5OZXR0eVRyYW5zcG9ydCQkYW5vbmZ1biRhc3NvY2lhdGUkMSQkYW5vbiQyOg0KPj4gQ29ubmVjdGlvbiByZWZ1c2VkOiAqPHdvcmtlcjQ-KjozMzE4NA0KPj4gXQ0KPj4gMjAxNC0xMC0wMSAwMjoxNDo1NCw4ODcgRVJST1IgYWtrYS5yZW1vdGUuRW5kcG9pbnRXcml0ZXI6DQo-PiBBc3NvY2lhdGlvbkVycm9yIFtha2thLnRjcDovL3NwYXJrV29ya2VyQCo8d29ya2VyND4qOjcwNzhdIC0-DQo-PiBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQCo8d29ya2VyND4qOjMzMTg0XTogRXJyb3IgW0Fzc29jaWF0aW9uIGZhaWxlZA0KPj4gd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQCo8d29ya2VyND4qOjMzMTg0XV0gWw0KPj4gYWtrYS5yZW1vdGUuRW5kcG9pbnRBc3NvY2lhdGlvbkV4Y2VwdGlvbjogQXNzb2NpYXRpb24gZmFpbGVkIHdpdGgNCj4-IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAKjx3b3JrZXI0Pio6MzMxODRdDQo-PiBDYXVzZWQgYnk6DQo-PiBha2thLnJlbW90ZS50cmFuc3BvcnQubmV0dHkuTmV0dHlUcmFuc3BvcnQkJGFub25mdW4kYXNzb2NpYXRlJDEkJGFub24kMjoNCj4-IENvbm5lY3Rpb24gcmVmdXNlZDogKjx3b3JrZXI0Pio6MzMxODQNCj4-IF0NCj4-DQo-PiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KPj4NCj4-IFlvdXIgc3VwcG9ydCB3aWxsIGJlIGhpZ2hseSBhcHByZWNpYXRlZC4NCj4-DQo-PiBSZWdhcmRzLA0KPj4gUml5YXoNCj4-DQo-PiBPbiBXZWQsIE9jdCAxLCAyMDE0IGF0IDE6MTYgQU0sIFRhdGhhZ2F0YSBEYXMgPA0KPj4gdGF0aGFnYXRhLmRhczE1NjVAZ21haWwuY29tPiB3cm90ZToNCj4-DQo-Pj4gSXMgdGhpcyB0aGUgbG9ncyBvZiB0aGUgd29ya2VyIHdoZXJlIHRoZSBmYWlsdXJlIG9jY3Vycz8gSSB0aGluayBpc3N1ZXMNCj4-PiBzaW1pbGFyIHRvIHRoZXNlIGhhdmUgc2luY2UgYmVlbiBzb2x2ZWQgaW4gbGF0ZXIgdmVyc2lvbnMgb2YgU3BhcmsuDQo-Pj4NCj4-PiBURA0KPj4-DQo-Pj4gT24gVHVlLCBTZXAgMzAsIDIwMTQgYXQgMTE6MzMgQU0sIFNoYWlraCBSaXlheiA8c2hhaWtoLnIuYUBnbWFpbC5jb20-DQo-Pj4gd3JvdGU6DQo-Pj4NCj4-Pj4gRGVhciBBbGwsDQo-Pj4-DQo-Pj4-IFdlIGFyZSB1c2luZyBTcGFyayBzdHJlYW1pbmcgdmVyc2lvbiAxLjAuMCBpbiBvdXIgQ2xvdWRlYSBIYWRvb3ANCj4-Pj4gY2x1c3RlciBDREggNS4xLjMuDQo-Pj4-DQo-Pj4-IFNwYXJrIHN0cmVhbWluZyBpcyByZWFkaW5nIG1lc3NhZ2VzIGZyb20gS2Fma2EgdXNpbmcNCj4-Pj4gaHR0cHM6Ly9naXRodWIuY29tL2RpYmJoYXR0L2thZmthLXNwYXJrLWNvbnN1bWVyLg0KPj4-Pg0KPj4-PiBXZSBoYXZlIGFsbG9jYXRlZCA0Z2IgbWVtb3J5IHRvIGV4ZWN1dG9yIGFuZCA1Z2IgdG8gZWFjaCB3b3JrZXJzLiBXZQ0KPj4-PiBoYXZlIHRvdGFsIDYgd29ya2VycyBzcHJlYWQgYWNyb3NzIDYgbWFjaGluZXMuDQo-Pj4-DQo-Pj4-IFBsZWFzZSBmaW5kIHRoZSBhdHRhY2ggbG9nIGZpbGUgZm9yIGRldGFpbGVkIGVycm9yIG1lc3NhZ2VzLg0KPj4-Pg0KPj4-Pg0KPj4-PiBUaGFua3MgaW4gYWR2YW5jZS4NCj4-Pj4NCj4-Pj4gLS0NCj4-Pj4gUmVnYXJkcywNCj4-Pj4NCj4-Pj4gUml5YXoNCj4-Pj4NCj4-Pj4NCj4-Pj4NCj4-Pj4gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQo-Pj4-IFRvIHVuc3Vic2NyaWJlLCBlLW1haWw6IHVzZXItdW5zdWJzY3JpYmVAc3BhcmsuYXBhY2hlLm9yZw0KPj4-PiBGb3IgYWRkaXRpb25hbCBjb21tYW5kcywgZS1tYWlsOiB1c2VyLWhlbHBAc3BhcmsuYXBhY2hlLm9yZw0KPj4-Pg0KPj4-DQo-Pj4NCj4-DQo-Pg0KPj4gLS0NCj4-IFJlZ2FyZHMsDQo-Pg0KPj4gUml5YXoNCj4-DQo-Pg0KPg0K"
+      }
+    },{
+      "partId":"1",
+      "mimeType":"text/html",
+      "filename":"",
+      "headers":[{
+        "name":"Content-Type",
+        "value":"text/html; charset=UTF-8"
+      },{
+        "name":"Content-Transfer-Encoding",
+        "value":"quoted-printable"
+      }],
+      "body":{
+        "size":6310,
+        "data":"PGRpdiBkaXI9Imx0ciI-PGRpdiBjbGFzcz0iZ21haWxfZGVmYXVsdCIgc3R5bGU9ImZvbnQtZmFtaWx5OmNvdXJpZXIgbmV3LG1vbm9zcGFjZTtjb2xvcjojMDAwMDAwIj5Mb29rcyBsaWtlIGEgY29uZmlndXJhdGlvbiBpc3N1ZSwgY2FuIHlvdSBwYXN0ZSB5b3VyIHNwYXJrLWVudi5zaCBvbiB0aGUgd29ya2VyPzwvZGl2PjwvZGl2PjxkaXYgY2xhc3M9ImdtYWlsX2V4dHJhIj48YnIgY2xlYXI9ImFsbCI-PGRpdj48ZGl2IGRpcj0ibHRyIj5UaGFua3M8ZGl2PkJlc3QgUmVnYXJkczwvZGl2PjwvZGl2PjwvZGl2Pg0KPGJyPjxkaXYgY2xhc3M9ImdtYWlsX3F1b3RlIj5PbiBXZWQsIE9jdCAxLCAyMDE0IGF0IDg6MjcgQU0sIFRhdGhhZ2F0YSBEYXMgPHNwYW4gZGlyPSJsdHIiPiZsdDs8YSBocmVmPSJtYWlsdG86dGF0aGFnYXRhLmRhczE1NjVAZ21haWwuY29tIiB0YXJnZXQ9Il9ibGFuayI-dGF0aGFnYXRhLmRhczE1NjVAZ21haWwuY29tPC9hPiZndDs8L3NwYW4-IHdyb3RlOjxicj48YmxvY2txdW90ZSBjbGFzcz0iZ21haWxfcXVvdGUiIHN0eWxlPSJtYXJnaW46MCAwIDAgLjhleDtib3JkZXItbGVmdDoxcHggI2NjYyBzb2xpZDtwYWRkaW5nLWxlZnQ6MWV4Ij48ZGl2IGRpcj0ibHRyIj5JdCB3b3VsZCBoZWxwIHRvIHR1cm4gb24gZGVidWcgbGV2ZWwgbG9nZ2luZyBpbiBsb2c0aiBhbmQgc2VlIHRoZSBsb2dzLiBKdXN0IGxvb2tpbmcgYXQgdGhlIGVycm9yIGxvZ3MgaXMgbm90IGdpdmluZyBtZSBhbnkgc2Vuc2UuIDooPHNwYW4gY2xhc3M9IkhPRW5aYiI-PGZvbnQgY29sb3I9IiM4ODg4ODgiPjxkaXY-PGJyPjwvZGl2PjxkaXY-VEQ8L2Rpdj48L2ZvbnQ-PC9zcGFuPjxkaXY-PGRpdiBjbGFzcz0iaDUiPjxkaXYgY2xhc3M9ImdtYWlsX2V4dHJhIj48YnI-PGRpdiBjbGFzcz0iZ21haWxfcXVvdGUiPk9uIFR1ZSwgU2VwIDMwLCAyMDE0IGF0IDQ6MzAgUE0sIFNoYWlraCBSaXlheiA8c3BhbiBkaXI9Imx0ciI-Jmx0OzxhIGhyZWY9Im1haWx0bzpzaGFpa2guci5hQGdtYWlsLmNvbSIgdGFyZ2V0PSJfYmxhbmsiPnNoYWlraC5yLmFAZ21haWwuY29tPC9hPiZndDs8L3NwYW4-IHdyb3RlOjxicj48YmxvY2txdW90ZSBjbGFzcz0iZ21haWxfcXVvdGUiIHN0eWxlPSJtYXJnaW46MCAwIDAgLjhleDtib3JkZXItbGVmdDoxcHggI2NjYyBzb2xpZDtwYWRkaW5nLWxlZnQ6MWV4Ij48ZGl2IGRpcj0ibHRyIj5IaSBURCw8ZGl2Pjxicj48L2Rpdj48ZGl2PlRoYW5rcyBmb3IgeW91ciByZXBseS48L2Rpdj48ZGl2Pjxicj48L2Rpdj48ZGl2PkF0dGFjaG1lbnQgaW4gcHJldmlvdXMgZW1haWwgd2FzIGZyb20gTWFzdGVyLjwvZGl2PjxkaXY-PGJyPjwvZGl2PjxkaXY-QmVsb3cgaXMgdGhlIGxvZyBtZXNzYWdlIGZyb20gb25lIG9mIHRoZSB3b3JrZXIuPC9kaXY-PGRpdj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTwvZGl2PjxkaXY-PGRpdj4yMDE0LTEwLTAxIDAxOjQ5OjIyLDM0OCBFUlJPUiBha2thLnJlbW90ZS5FbmRwb2ludFdyaXRlcjogQXNzb2NpYXRpb25FcnJvciBbYWtrYS50Y3A6Ly9zcGFya1dvcmtlckA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjcwNzhdIC0mZ3Q7IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAPGI-Jmx0O3dvcmtlcjQmZ3Q7PC9iPjozNDAxMF06IEVycm9yIFtBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzQwMTBdXSBbPC9kaXY-PGRpdj5ha2thLnJlbW90ZS5FbmRwb2ludEFzc29jaWF0aW9uRXhjZXB0aW9uOiBBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzQwMTBdPC9kaXY-PGRpdj5DYXVzZWQgYnk6IGFra2EucmVtb3RlLnRyYW5zcG9ydC5uZXR0eS5OZXR0eVRyYW5zcG9ydCQkYW5vbmZ1biRhc3NvY2lhdGUkMSQkYW5vbiQyOiBDb25uZWN0aW9uIHJlZnVzZWQ6wqA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjM0MDEwPC9kaXY-PGRpdj5dPC9kaXY-PGRpdj4yMDE0LTEwLTAxIDAyOjE0OjU0LDg2OCBFUlJPUiBha2thLnJlbW90ZS5FbmRwb2ludFdyaXRlcjogQXNzb2NpYXRpb25FcnJvciBbYWtrYS50Y3A6Ly9zcGFya1dvcmtlckA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjcwNzhdIC0mZ3Q7IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAPGI-Jmx0O3dvcmtlcjQmZ3Q7PC9iPjozMzE4NF06IEVycm9yIFtBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdXSBbPC9kaXY-PGRpdj5ha2thLnJlbW90ZS5FbmRwb2ludEFzc29jaWF0aW9uRXhjZXB0aW9uOiBBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdPC9kaXY-PGRpdj5DYXVzZWQgYnk6IGFra2EucmVtb3RlLnRyYW5zcG9ydC5uZXR0eS5OZXR0eVRyYW5zcG9ydCQkYW5vbmZ1biRhc3NvY2lhdGUkMSQkYW5vbiQyOiBDb25uZWN0aW9uIHJlZnVzZWQ6wqA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjMzMTg0PC9kaXY-PGRpdj5dPC9kaXY-PGRpdj4yMDE0LTEwLTAxIDAyOjE0OjU0LDg3OCBFUlJPUiBha2thLnJlbW90ZS5FbmRwb2ludFdyaXRlcjogQXNzb2NpYXRpb25FcnJvciBbYWtrYS50Y3A6Ly9zcGFya1dvcmtlckA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjcwNzhdIC0mZ3Q7IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAPGI-Jmx0O3dvcmtlcjQmZ3Q7PC9iPjozMzE4NF06IEVycm9yIFtBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdXSBbPC9kaXY-PGRpdj5ha2thLnJlbW90ZS5FbmRwb2ludEFzc29jaWF0aW9uRXhjZXB0aW9uOiBBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdPC9kaXY-PGRpdj5DYXVzZWQgYnk6IGFra2EucmVtb3RlLnRyYW5zcG9ydC5uZXR0eS5OZXR0eVRyYW5zcG9ydCQkYW5vbmZ1biRhc3NvY2lhdGUkMSQkYW5vbiQyOiBDb25uZWN0aW9uIHJlZnVzZWQ6wqA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjMzMTg0PC9kaXY-PGRpdj5dPC9kaXY-PGRpdj4yMDE0LTEwLTAxIDAyOjE0OjU0LDg4NyBFUlJPUiBha2thLnJlbW90ZS5FbmRwb2ludFdyaXRlcjogQXNzb2NpYXRpb25FcnJvciBbYWtrYS50Y3A6Ly9zcGFya1dvcmtlckA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjcwNzhdIC0mZ3Q7IFtha2thLnRjcDovL3NwYXJrRXhlY3V0b3JAPGI-Jmx0O3dvcmtlcjQmZ3Q7PC9iPjozMzE4NF06IEVycm9yIFtBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdXSBbPC9kaXY-PGRpdj5ha2thLnJlbW90ZS5FbmRwb2ludEFzc29jaWF0aW9uRXhjZXB0aW9uOiBBc3NvY2lhdGlvbiBmYWlsZWQgd2l0aCBbYWtrYS50Y3A6Ly9zcGFya0V4ZWN1dG9yQDxiPiZsdDt3b3JrZXI0Jmd0OzwvYj46MzMxODRdPC9kaXY-PGRpdj5DYXVzZWQgYnk6IGFra2EucmVtb3RlLnRyYW5zcG9ydC5uZXR0eS5OZXR0eVRyYW5zcG9ydCQkYW5vbmZ1biRhc3NvY2lhdGUkMSQkYW5vbiQyOiBDb25uZWN0aW9uIHJlZnVzZWQ6wqA8Yj4mbHQ7d29ya2VyNCZndDs8L2I-OjMzMTg0PC9kaXY-PGRpdj5dPC9kaXY-PC9kaXY-PGRpdj4tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLTwvZGl2PjxkaXY-PGJyPjwvZGl2PjxkaXY-WW91ciBzdXBwb3J0IHdpbGwgYmUgaGlnaGx5IGFwcHJlY2lhdGVkLjwvZGl2PjxkaXY-PGJyPjwvZGl2PjxkaXY-UmVnYXJkcyw8L2Rpdj48ZGl2PlJpeWF6PC9kaXY-PC9kaXY-PGRpdiBjbGFzcz0iZ21haWxfZXh0cmEiPjxkaXY-PGRpdj48YnI-PGRpdiBjbGFzcz0iZ21haWxfcXVvdGUiPk9uIFdlZCwgT2N0IDEsIDIwMTQgYXQgMToxNiBBTSwgVGF0aGFnYXRhIERhcyA8c3BhbiBkaXI9Imx0ciI-Jmx0OzxhIGhyZWY9Im1haWx0bzp0YXRoYWdhdGEuZGFzMTU2NUBnbWFpbC5jb20iIHRhcmdldD0iX2JsYW5rIj50YXRoYWdhdGEuZGFzMTU2NUBnbWFpbC5jb208L2E-Jmd0Ozwvc3Bhbj4gd3JvdGU6PGJyPjxibG9ja3F1b3RlIGNsYXNzPSJnbWFpbF9xdW90ZSIgc3R5bGU9Im1hcmdpbjowIDAgMCAuOGV4O2JvcmRlci1sZWZ0OjFweCAjY2NjIHNvbGlkO3BhZGRpbmctbGVmdDoxZXgiPjxkaXYgZGlyPSJsdHIiPklzIHRoaXMgdGhlIGxvZ3Mgb2YgdGhlIHdvcmtlciB3aGVyZSB0aGUgZmFpbHVyZSBvY2N1cnM_IEkgdGhpbmsgaXNzdWVzIHNpbWlsYXIgdG8gdGhlc2UgaGF2ZSBzaW5jZSBiZWVuIHNvbHZlZCBpbiBsYXRlciB2ZXJzaW9ucyBvZiBTcGFyay7CoDxkaXY-PGJyPjwvZGl2PjxkaXY-VEQ8L2Rpdj48L2Rpdj48ZGl2IGNsYXNzPSJnbWFpbF9leHRyYSI-PGJyPjxkaXYgY2xhc3M9ImdtYWlsX3F1b3RlIj48ZGl2PjxkaXY-T24gVHVlLCBTZXAgMzAsIDIwMTQgYXQgMTE6MzMgQU0sIFNoYWlraCBSaXlheiA8c3BhbiBkaXI9Imx0ciI-Jmx0OzxhIGhyZWY9Im1haWx0bzpzaGFpa2guci5hQGdtYWlsLmNvbSIgdGFyZ2V0PSJfYmxhbmsiPnNoYWlraC5yLmFAZ21haWwuY29tPC9hPiZndDs8L3NwYW4-IHdyb3RlOjxicj48L2Rpdj48L2Rpdj48YmxvY2txdW90ZSBjbGFzcz0iZ21haWxfcXVvdGUiIHN0eWxlPSJtYXJnaW46MCAwIDAgLjhleDtib3JkZXItbGVmdDoxcHggI2NjYyBzb2xpZDtwYWRkaW5nLWxlZnQ6MWV4Ij48ZGl2PjxkaXY-PGRpdiBkaXI9Imx0ciI-RGVhciBBbGwsPGRpdj48YnI-PC9kaXY-PGRpdj5XZSBhcmUgdXNpbmcgU3Bhcmsgc3RyZWFtaW5nIHZlcnNpb24gMS4wLjAgaW4gb3VyIENsb3VkZWEgSGFkb29wIGNsdXN0ZXIgQ0RIIDUuMS4zLjwvZGl2PjxkaXY-PGJyPjwvZGl2PjxkaXY-U3Bhcmsgc3RyZWFtaW5nIGlzIHJlYWRpbmcgbWVzc2FnZXMgZnJvbSBLYWZrYSB1c2luZ8KgPGEgaHJlZj0iaHR0cHM6Ly9naXRodWIuY29tL2RpYmJoYXR0L2thZmthLXNwYXJrLWNvbnN1bWVyIiB0YXJnZXQ9Il9ibGFuayI-aHR0cHM6Ly9naXRodWIuY29tL2RpYmJoYXR0L2thZmthLXNwYXJrLWNvbnN1bWVyPC9hPi48L2Rpdj48ZGl2Pjxicj48L2Rpdj48ZGl2PldlIGhhdmUgYWxsb2NhdGVkIDRnYiBtZW1vcnkgdG8gZXhlY3V0b3IgYW5kIDVnYiB0byBlYWNoIHdvcmtlcnMuIFdlIGhhdmUgdG90YWwgNiB3b3JrZXJzIHNwcmVhZCBhY3Jvc3MgNiBtYWNoaW5lcy48L2Rpdj48ZGl2Pjxicj48L2Rpdj48ZGl2PlBsZWFzZSBmaW5kIHRoZSBhdHRhY2ggbG9nIGZpbGUgZm9yIGRldGFpbGVkIGVycm9yIG1lc3NhZ2VzLjxicj48cCBjbGFzcz0iTXNvTm9ybWFsIj48L3A-PGRpdj48YnI-PC9kaXY-PGRpdj5UaGFua3MgaW4gYWR2YW5jZS48L2Rpdj48c3Bhbj48Zm9udCBjb2xvcj0iIzg4ODg4OCI-PGRpdj48YnI-PC9kaXY-LS0gPGJyPlJlZ2FyZHMsPGRpdj48YnI-Uml5YXo8YnI-PGJyPjwvZGl2Pg0KPC9mb250Pjwvc3Bhbj48L2Rpdj48L2Rpdj4NCjxicj48YnI-PC9kaXY-PC9kaXY-DQotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS08YnI-DQpUbyB1bnN1YnNjcmliZSwgZS1tYWlsOiA8YSBocmVmPSJtYWlsdG86dXNlci11bnN1YnNjcmliZUBzcGFyay5hcGFjaGUub3JnIiB0YXJnZXQ9Il9ibGFuayI-dXNlci11bnN1YnNjcmliZUBzcGFyay5hcGFjaGUub3JnPC9hPjxicj4NCkZvciBhZGRpdGlvbmFsIGNvbW1hbmRzLCBlLW1haWw6IDxhIGhyZWY9Im1haWx0bzp1c2VyLWhlbHBAc3BhcmsuYXBhY2hlLm9yZyIgdGFyZ2V0PSJfYmxhbmsiPnVzZXItaGVscEBzcGFyay5hcGFjaGUub3JnPC9hPjxicj48L2Jsb2NrcXVvdGU-PC9kaXY-PGJyPjwvZGl2Pg0KPC9ibG9ja3F1b3RlPjwvZGl2Pjxicj48YnIgY2xlYXI9ImFsbCI-PGRpdj48YnI-PC9kaXY-PC9kaXY-PC9kaXY-PHNwYW4-PGZvbnQgY29sb3I9IiM4ODg4ODgiPi0tIDxicj5SZWdhcmRzLDxkaXY-PGJyPlJpeWF6PGJyPjxicj48L2Rpdj4NCjwvZm9udD48L3NwYW4-PC9kaXY-DQo8L2Jsb2NrcXVvdGU-PC9kaXY-PGJyPjwvZGl2PjwvZGl2PjwvZGl2PjwvZGl2Pg0KPC9ibG9ja3F1b3RlPjwvZGl2Pjxicj48L2Rpdj4NCg=="
+      }
+    }]
+  },
+  "sizeEstimate":14976
+}
+
+
+ """
+      @tailrec def findJsonObjects(str: String, json: List[JValue] = List(), currentIndex: Int = 0, startingIndex: Int = 0, openingBrackets: Int = 0, closingBrackets: Int = 0): List[JValue] = {
+        str.slice(currentIndex, currentIndex + 1) match {
+          case "{" if openingBrackets == 0 => findJsonObjects(str, json, currentIndex + 1, currentIndex, 1, 0)
+          case "{" if openingBrackets > 0 => findJsonObjects(str, json, currentIndex + 1, startingIndex, openingBrackets + 1, closingBrackets)
+          case "}" if closingBrackets < (openingBrackets - 1) => findJsonObjects(str, json, currentIndex + 1, startingIndex, openingBrackets, closingBrackets + 1)
+          case "}" if closingBrackets == (openingBrackets - 1) => findJsonObjects(str, JsonParser.parse(str.slice(startingIndex, currentIndex + 1)) :: json, currentIndex + 1)
+          case x if currentIndex == str.length => json
+          case x  => findJsonObjects(str, json, currentIndex + 1, startingIndex, openingBrackets, closingBrackets)
+        }
+      }
+      
+      def findMessageMetaData(json: JValue) = {
+    val payload = for {
+      payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
+    } yield payload
+    
+    val headers = for {
+      payload <- payload
+      headers <- payload.asInstanceOf[Map[String,Any]].get("headers")
+    } yield headers
+    
+    val subject = for {
+      headers <- headers
+      subjectOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Subject"))
+      subject <- subjectOpt.get("value")
+    } yield subject
+    println(s"############## subject $subject")
+    
+    val to = (for {
+      headers <- headers
+      toOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("To"))
+      to <- toOpt.get("value")
+    } yield to) match {
+      case Some(s) => Some(s)
+      case None => {
+        (for {
+          headers <- headers
+          toOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Delivered-To"))
+          to <- toOpt.get("value")
+        } yield to)
+      }
+    }
+    println(s"############## to $to")
+    
+    val from = for {
+      headers <- headers
+      fromOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("From"))
+      from <- fromOpt.get("value")
+    } yield from
+    println(s"############## from $from")
+    
+    val threadId = for {
+      threadId <- json.values.asInstanceOf[Map[String,Any]].get("threadId")
+    } yield threadId
+    println(s"############## threadId $threadId")
+    
+    val messageId = for {
+      messageId <- json.values.asInstanceOf[Map[String,Any]].get("id")
+    } yield messageId
+    println(s"############## messageId $messageId")
+    
+    val cc = for {
+      headers <- headers
+      ccOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Cc"))
+      cc <- ccOpt.get("value")
+    } yield cc
+    println(s"############## cc $cc")
+    
+    val time = (for {
+      headers <- headers
+      timeOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Received"))
+      time <- timeOpt.get("value")
+    } yield time) match {
+      case Some(s) => Some(s)
+      case None => {
+        (for {
+          headers <- headers
+          toOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("X-Received"))
+          to <- toOpt.get("value")
+        } yield to)
+      }
+    }
+    println(s"############## time $time")
+ 
+    for {
+      headers <- headers
+      subjectOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Subject"))
+      subject <- subjectOpt.get("value")
+      fromOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("From"))
+      from <- fromOpt.get("value")
+      messageId <- json.values.asInstanceOf[Map[String,Any]].get("id")
+      threadId <- json.values.asInstanceOf[Map[String,Any]].get("threadId")
+      timeOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Received"))
+      time <- timeOpt.get("value")
+    } yield(Map("subject" -> subject, "to" -> to, "from" -> from, "threadId" -> threadId, "messageId" -> messageId, "cc" -> cc, "time" -> time))
+  }
+      
+      def getBodies1(json: JValue): Option[Map[String,String]] = {
+        (for {
+          payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
+          body <- payload.asInstanceOf[Map[String,Any]].get("body")
+//          headers <- payload.asInstanceOf[Map[String,Any]].get("headers")
+        } yield(body, payload)) match {
+        case Some(m) => {
+          (for {
+            parts <- m._2.asInstanceOf[Map[String,Any]].get("parts")
+            textMap <- parts.asInstanceOf[List[Map[String,Any]]].find(part => part.get("mimeType") == Some("text/plain"))
+            text <- textMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
+            htmlMap <- parts.asInstanceOf[List[Map[String,Any]]].find(part => part.get("mimeType") == Some("text/html"))
+            html <- htmlMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
+          } yield(text, html)) match {
+            case Some(b) => Some(Map("text" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._1)), "html" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._2))))
+            case None => None
+          }
+        }
+        case None => None
+        }
+      }
+      
+      def getBodies2(json: JValue): Option[Map[String,String]] = {
+        (for {
+          payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
+          parts1 <- payload.asInstanceOf[Map[String,Any]].get("parts")
+          parts2Option = parts1.asInstanceOf[List[Map[String,Any]]].find(_.get("parts").isDefined).flatMap(_.get("parts"))
+          parts2 <- parts2Option
+        } yield(parts2.asInstanceOf[List[Map[String,Any]]])) match {
+          case Some(np) => {
+            (for {
+              textMap <- np.find(_.get("mimeType") == Some("text/plain"))
+              text <- textMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
+              htmlMap <- np.find(_.get("mimeType") == Some("text/html"))
+              html <- htmlMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
+            } yield(text, html)) match {
+              case Some(b) => Some(Map("textBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._1)), "htmlBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._2))))
+              case None => None
+            }
+          }
+          case None => None
+        }
+      }
+        
+        def getMessageBodies(json: JValue): Map[String,String] = {
+          getBodies1(json) match {
+            case Some(b) => b
+            case None => getBodies2(json) match {
+              case Some(b) => b
+              case None => Map()
+            }
+          }
+        }
+        
+        val results = findJsonObjects(json).map(j => {
+          println(s"################ ${findMessageMetaData(j)}")
+        })
     }
   }
   

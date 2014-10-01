@@ -70,12 +70,12 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
       } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id))
     }
-    case ImportEmail(userId) => { // TODO: Add time as param, so can continually get latest, unchecked emails??
+    case ImportEmail(userId) => {
       val emailAccounts = userId match {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {
             ea.provider match {
-              case "gmail" => importGmail(ea.userId, ea.username, ea.accessToken, ea.id)
+              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id)
               case _ =>
             }
          })
@@ -88,198 +88,14 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
   }
   
   def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
-    val messagesUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=10")
-    val messagesReq = GET(messagesUrl).addHeaders(("authorization", s"Bearer $accessToken"))
-    val messagesRes = messagesReq.apply.map(res => {
-
-    (for {
-        body <- res.toJValue.values.asInstanceOf[Map[String,Any]].get("body")
-        messages <- JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]].get("messages")
-      } yield(messages.asInstanceOf[List[Map[String,String]]])) match {
-        case Some(ms) => ms.foreach(m => saveEmailDataActor ! GetGmailMessage(m, gmailUserId, accessToken))
-        case None => Unit
+    val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=30")
+    val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
+    val messageListRes = messageListReq.apply.map(res => {
+      JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
+        case Some(ms) => saveEmailDataActor ! GetGmailMessage(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken) // filter the http response into a list of gmail message ids
+        case None => println(s"############ didn't find any messageids (access token probably expired)")
       }
+      println(s"############# messageIds")
     })
-  }
-  
-  def importGmail(userId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
-    val props = new Properties();
-    props.put("mail.store.protocol", "gimaps");
-    props.put("mail.imap.sasl.enable", "true");
-    props.put("mail.gimaps.sasl.enable", "true");
-    props.put("mail.gimaps.sasl.mechanisms", "XOAUTH2");
-    props.put("mail.imap.auth.login.disable", "true");
-    props.put("mail.imap.auth.plain.disable", "true");
-
-    val session = Session.getInstance(props)
-    val store: GmailSSLStore = session.getStore("gimaps").asInstanceOf[GmailSSLStore]
-    store.connect("imap.googlemail.com", emailAddress, accessToken) //TODO: make this a try
-
-   // get different folders??
-    val folder: GmailFolder = store.getFolder("INBOX").asInstanceOf[GmailFolder]
-
-    val currentDateTime = new DateTime
-    val lastEmailUid = (for {
-      ue <- UserEventIO().find(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1).headOption // TODO: use findAsync
-      uid <- ue.data.get("uid") // Some(15794l)
-    } yield uid.toLong)
-    
-    val fp: FetchProfile = new FetchProfile();
-    fp.add(FetchProfile.Item.ENVELOPE);
-
-    println(s"################### lastEmailUid $lastEmailUid")
-
-    folder.open(Folder.READ_WRITE);
-
-    val messages = lastEmailUid match {
-      case Some(uid) => {
-        folder.fetch(folder.getMessagesByUID(uid, LASTUID), fp)
-        folder.getMessagesByUID(uid, LASTUID)
-      }
-      case None => {
-        val messageCount = folder.getMessageCount
-        folder.fetch(folder.getMessages(messageCount - 50, messageCount), fp)
-        folder.getMessages(messageCount - 50, messageCount);
-      }
-    }
-
-    println(s"!!!!!!!!!!!!!!!!!! messages.size ${messages.size}")
-
-    val newLastUID = folder.getUID(messages(messages.size - 1).asInstanceOf[GmailMessage])
-    println(s"@@@@@@@@@@@@@ newLastUID $newLastUID")
-    
-    newLastUID match {
-      case newUID if newUID == lastEmailUid.getOrElse(0l) => println(s"NO NEW MESSAGES FOR userId: $userId / email: $emailAddress")
-      case _ => messages.map(m => extractBody(m, folder, userId, emailAddress, emailAccountId))
-    }
-
-    folder.close(false)
-    store.close()
-    UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", currentDateTime.getMillis, Map("uid" -> newLastUID.toString)))
-  }
-  
-  def extractBody(message: javax.mail.Message, folder: GmailFolder, userId: String, emailAddress: String, emailAccountId: String): Unit = {
-    val gm = message.asInstanceOf[GmailMessage]
-    val gmId = gm.getMsgId()
-    
-    val uid = folder.getUID(gm) // TODO: use env var to make this only run on local. only useful for test purposes
-//    println(s"UIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUIDUID $uid")
-
-    val body = getText(message)
-//    val testBody = getText2(message).map(m => { m._2 match {
-//      case None => s"!!!!!!!!!!!!! DIDN'T FIND ANYTHING"
-//      case Some(s) => s"==================== FOUND SOMETHING!!! $s"
-//    }})
-//    println(s"########### testBody $testBody")
-    val threadId = gm.getThrId()
-
-    val sender = message.getFrom() match {
-      case null => ""
-      case Array() => ""
-      case a => InternetAddress.parse(a(0).toString)(0).getAddress
-    }
-    
-    val to = message.getRecipients(Message.RecipientType.TO) match {
-      case null => Set()
-      case Array() => Set()
-      case to => InternetAddress.parse(to(0).toString)(0).getAddress.split(",").toSet
-    }
-
-    val cc = message.getRecipients(Message.RecipientType.CC) match {
-      case null => Set()
-      case Array() => Set()
-      case cc => InternetAddress.parse(cc(0).toString)(0).getAddress.split(",").toSet
-    }
-
-    val bcc = message.getRecipients(Message.RecipientType.BCC) match {
-      case null => Set()
-      case Array() => Set()
-      case bcc => InternetAddress.parse(bcc(0).toString)(0).getAddress.split(",").toSet // fucking retarded
-    }
-
-    val subject = message.getSubject() match {
-      case null => ""
-      case x: String => x
-    }
-    
-    val ts = message.getSentDate().getMillis
-
-    saveEmailDataActor ! SaveData(userId, to.map(_.toString), cc.map(_.toString), bcc.map(_.toString), emailAddress, sender, subject, ts, threadId, gmId, emailAccountId, body)
-  }
-  
-  def getText2(p: Part): Map[String, Option[String]] = {
-    var htmlBody: Option[String] = None
-    var textBody: Option[String] = None
-
-    if (p.isMimeType("text/*")) {
-        p.getContent().asInstanceOf[String];
-    }
-    if (p.isMimeType("multipart/alternative")) {
-        // prefer html text over plain text
-        val mp = p.getContent().asInstanceOf[Multipart];
-        var text: String = null;
-        for(i <- 0 to mp.getCount() - 1) {
-//          println(s"@@@@@@@@@@@@@@@ first i $i")
-            val bp = mp.getBodyPart(i);
-            if (bp.isMimeType("text/plain")) {
-                if (text == null)
-                    println(s"%%%%%%%%%%%%%%%%% is Text!!!")
-                    textBody = getText3(bp)
-//                continue;
-            } else if (bp.isMimeType("text/html")) {
-                val s = getText3(bp);
-                if (s != null)
-                  println(s"&&&&&&&&&&&&&&&&&&& is HTML!!!")
-                    htmlBody = s;
-            } else {
-                textBody = getText3(bp);
-            }
-        }
-    } else if (p.isMimeType("multipart/*")) {
-        val mp = p.getContent.asInstanceOf[Multipart];
-        for (i <- 0 to mp.getCount() - 1) {
-//          println(s"@@@@@@@@@@@@@@@ second i $i")
-          val s = getText3(mp.getBodyPart(i))
-          if (s != null) {
-            println(s"############### s in 3 if")
-            textBody = s;
-          }
-        }
-    }
-    
-    Map("html" -> htmlBody, "text" -> textBody)
-  }
-  
-  def getText3(p: Part): Option[String] = {
-    if (p.isMimeType("text/*")) {
-      val s = p.getContent().toString
-//      println(s"############### s $s")
-//        textIsHtml = p.isMimeType("text/html");
-      Some(s);
-    } else None
-  }
-  
-  def getText(m: Message): Map[String, Option[Object]] = {
-    val contentObject = m.getContent()
-    if(contentObject.isInstanceOf[Multipart]) {
-      val content: Multipart = contentObject.asInstanceOf[Multipart];
-      val count = content.getCount() - 1;
-      
-      var html: Option[Object] = None
-      var text: Option[Object] = None
-      var somethingElse: Option[Object] = None
-      
-      breakable {for(i <- 0 to count) {
-        val part = content.getBodyPart(i);
-        if(part.isMimeType("text/plain")) {
-          text = Some(part.getContent)
-        }
-        else if(part.isMimeType("text/html"))
-        {
-          html = Some(part.getContent)
-        }
-      }}
-      Map("html" -> html, "text" -> text)
-    } else Map()
   }
 }
