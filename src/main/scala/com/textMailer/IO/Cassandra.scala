@@ -173,6 +173,7 @@ class SimpleClient() {
 //    insert into email_accounts (user_id, id, provider, username, access_token, refresh_token) VALUES ('bbe1131d-3be5-4997-a1ee-295f6f2c9dbf', '90a5d5c6-9165-4080-a7aa-cc4b45268ef3', 'gmail', 'sportano@gmail.com', 'ya29.bwAp7qQU6MPSHSEAAABEnpRPrAiQk_M1e_2HOxc9sv6AjUEblpEHY7rE2EBeR4kvsPJi4NzZ7sfDyeetnoo', '1/v80mUQGjMDXYYJ56F7Tx1H62yLiWcMODON1xZett0EM');
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
 //    update email_accounts set access_token = 'ya29.jgA2eVbmFNfqdgRh6_YL6W4yFZPl8YuHVWjCSrdGjcVc_PNS3b9Y8L7r' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = 'c0cf3490-25a2-4071-a486-5e0e62247f8d';
+    //     // UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "metaDataIssue", new DateTime().getMillis, Map("json" -> pretty(render(json)))))
   }
   
   def dropKeyspace(keyspace: String): Unit = {

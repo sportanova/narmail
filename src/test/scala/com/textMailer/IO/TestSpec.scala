@@ -10,10 +10,14 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.actors.Futures
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.codec.binary.StringUtils
 import net.liftweb.json.JsonParser
 import annotation.tailrec
 import net.liftweb.json.JsonAST.JValue
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.DateTimeFormatter
+import scala.util.Try
 
 class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   PrepareData()
@@ -774,7 +778,21 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
       val users = cc.split(",").toList
       val y = users.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
       
-      println(s"######### users ${getRecipientInfo(cc)}")
+//      println(s"######### users ${getRecipientInfo(cc)}")
+    }
+
+    "datetime parser" in {
+//      val x = DateTime.parse("Wed, 1 Oct 2014 22:12:45 -0700 (PDT)")
+//      val fmt = DateTimeFormat.forPattern("dddd, dd MMMM yyyy HH:mm:ss Z");
+      implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
+      def findTime(time: String)(implicit fmt: DateTimeFormatter): Try[Long] = {
+        val sanitizedTime = time.split("\\(")
+        Try{DateTime.parse(sanitizedTime(0).trim, fmt).getMillis}
+      }
+      val x = findTime("Sun, 28 Sep 2014 17:48:39 -0700")
+      println(s"######## x $x")
+      val y = findTime("Thu, 02 Oct 2014 00:57:06 +0000 (UTC)")
+      println(s"######## y $y")
     }
   }
   

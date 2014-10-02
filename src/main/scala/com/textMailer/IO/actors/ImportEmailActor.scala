@@ -35,7 +35,6 @@ import com.textMailer.models.UserEvent
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.util.Timeout
 import akka.actor.Props
-import com.textMailer.IO.actors.SaveEmailDataActor.SaveData
 import javax.mail.FetchProfile
 import javax.mail.search.FlagTerm
 import javax.mail.Flags
@@ -48,7 +47,7 @@ import com.stackmob.newman.dsl._
 import com.stackmob.newman.response.HttpResponse
 import java.net.URL
 import net.liftweb.json.JsonParser
-import com.textMailer.IO.actors.SaveEmailDataActor.GetGmailMessage
+import com.textMailer.IO.actors.GetEmailActor.GetGmailMessages
 
 object ImportEmailActor {
   case class ImportEmail(userId: Option[String])
@@ -59,7 +58,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
   import com.textMailer.IO.actors.ImportEmailActor._
   implicit val httpClient = new ApacheHttpClient
   implicit val timeout = Timeout(8000)
-  val saveEmailDataActor = context.actorOf(Props[SaveEmailDataActor], "SaveEmailDataActor")
+  val getEmailActor = context.actorOf(Props[GetEmailActor], "GetEmailActor")
 
   def receive = {
     case "recurringImport" => { // TODO: add unit test??
@@ -92,7 +91,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
     val messageListRes = messageListReq.apply.map(res => {
       JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
-        case Some(ms) => saveEmailDataActor ! GetGmailMessage(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken) // filter the http response into a list of gmail message ids
+        case Some(ms) => getEmailActor ! GetGmailMessages(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken, emailAddress) // filter the http response into a list of gmail message ids
         case None => println(s"############ didn't find any messageids (access token probably expired)")
       }
       println(s"############# messageIds")
