@@ -66,7 +66,7 @@ class TopicIO(client: SimpleClient, table: String) extends QueryIO {
 
     val id = row.getString("user_id")
     val recipientsHash = row.getString("recipients_hash")
-    val threadId = row.getLong("thread_id")
+    val threadId = row.getString("thread_id")
     val subject = row.getString("subject")
     val ts = row.getLong("ts")
     val emailCount = row.getLong("em_cnt")
@@ -86,14 +86,13 @@ class TopicIO(client: SimpleClient, table: String) extends QueryIO {
   }
   
   def break(topic: Topic, boundStatement: BoundStatement): BoundStatement = {
-    val threadId: java.lang.Long = topic.threadId
     val ts: java.lang.Long = topic.ts
     val emailCount: java.lang.Long = topic.emailCount
 
     boundStatement.bind(
       topic.userId,
       topic.recipientsHash,
-      threadId,
+      topic.threadId,
       topic.subject,
       ts,
       emailCount

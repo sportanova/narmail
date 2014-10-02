@@ -3,9 +3,9 @@ package com.textMailer.models
 import java.util.UUID
 
 case class Email (
-  id: Long,
+  id: String,
   userId: String,
-  threadId: Long,
+  threadId: String,
   recipientsHash: String,
   recipients: Option[Set[String]],
   ts: Long,

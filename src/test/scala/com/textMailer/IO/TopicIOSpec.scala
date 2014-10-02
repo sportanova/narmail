@@ -18,7 +18,7 @@ class TopicIOSpec extends MutableScalatraSpec {
 
   "TopicIO.write" should {
     "write to the db" in {
-      val topic = Topic("someUserId", "sportano@gmail.com", 4534535l, "subject1", 1l, 2l)
+      val topic = Topic("someUserId", "sportano@gmail.com", "4534535l", "subject1", 1l, 2l)
       val writtenTopic = TopicIO().write(topic)
       val foundTopics = TopicIO().find(List(Eq("user_id","someUserId"), Eq("recipients_hash","sportano@gmail.com")), 10)
       foundTopics.headOption.get.userId === "someUserId"
@@ -26,9 +26,9 @@ class TopicIOSpec extends MutableScalatraSpec {
     }
     
     "count number of topics for a conversation" in {
-      val topic = Topic("someUserId", "sportano@gmail.com", 535l, "subject1", 1l, 2l)
+      val topic = Topic("someUserId", "sportano@gmail.com", "535l", "subject1", 1l, 2l)
       val writtenTopic = TopicIO().write(topic)
-      val topic3 = Topic("someUserId", "sportano@gmail.com", 123l, "subject1", 1l, 2l)
+      val topic3 = Topic("someUserId", "sportano@gmail.com", "123l", "subject1", 1l, 2l)
       val writtenTopic3 = TopicIO().write(topic3)
       
       val countFuture = (for {

@@ -52,9 +52,9 @@ class SimpleClient() {
 
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
-      "id bigint," +
+      "id text," +
       "user_id text," +
-      "thread_id bigint," + // TODO: add account id?
+      "thread_id text," + // TODO: add account id?
       "recipients_hash text," +
       "recipients set<text>," +
       "ts bigint," +
@@ -69,9 +69,9 @@ class SimpleClient() {
     
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_conversation (" +
-      "id bigint," +
+      "id text," +
       "user_id text," +
-      "thread_id bigint," + // TODO: add account id?
+      "thread_id text," + // TODO: add account id?
       "recipients_hash text," +
       "recipients set<text>," +
       "ts bigint," +
@@ -100,7 +100,7 @@ class SimpleClient() {
     ");")
     
     session.execute(
-      s"CREATE TABLE IF NOT EXISTS $keyspace.email_accounts (" + // TODO: add gmail_user_id 100030981325891290860 ya29.jQAqCp5kI3gS9GU2NuDfXhKGMGMRp_WqPQjDls126xmXQ5qxFxxYNy6U
+      s"CREATE TABLE IF NOT EXISTS $keyspace.email_accounts (" + // TODO: add gmail_user_id 100030981325891290860
       "user_id text," +
       "id text," +
       "provider text," +
@@ -137,7 +137,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.topics_by_conversation (" +
         "user_id text," +
         "recipients_hash text," +
-        "thread_id bigint," +
+        "thread_id text," +
         "subject text," +
         "ts bigint," +
         "em_cnt bigint," +
@@ -148,7 +148,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_topics_by_conversation (" +
         "user_id text," +
         "recipients_hash text," +
-        "thread_id bigint," +
+        "thread_id text," +
         "subject text," +
         "ts bigint," +
         "em_cnt bigint," +

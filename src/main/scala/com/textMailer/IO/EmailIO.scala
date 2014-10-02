@@ -63,9 +63,9 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
   def build(row: Row): Email = {
     val str: java.lang.String = ""
 
-    val id: java.lang.Long = row.getLong("id")
+    val id = row.getString("id")
     val userId = row.getString("user_id")
-    val threadId: java.lang.Long = row.getLong("thread_id")
+    val threadId = row.getString("thread_id")
     val subject = row.getString("subject")
     val sender = row.getString("sender")
     val recipientsHash = row.getString("recipients_hash")
@@ -94,18 +94,16 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
   }
   
   def break(email: Email, boundStatement: BoundStatement): BoundStatement = {
-    val threadId: java.lang.Long = email.threadId
     val ts: java.lang.Long = email.ts
-    val id: java.lang.Long = email.id
     val recipients = email.recipients match {
       case Some(r) => setAsJavaSet(r)
       case None => null
     }
 
     boundStatement.bind(
-      id,
+      email.id,
       email.userId,
-      threadId,
+      email.threadId,
       email.recipientsHash,
       recipients,
       ts,
