@@ -67,7 +67,7 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
     val userId = row.getString("user_id")
     val threadId = row.getString("thread_id")
     val subject = row.getString("subject")
-    val sender = row.getString("sender")
+    val sender: Map[String,String] = row.getMap("sender", str.getClass, str.getClass).toMap
     val recipientsHash = row.getString("recipients_hash")
     val recipients: Option[Map[String,String]] = row.getMap("recipients", str.getClass, str.getClass).toMap match {
       case x: Map[String,String] => Some(x)
@@ -108,7 +108,7 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
       recipients,
       ts,
       email.subject,
-      email.sender,
+      mapAsJavaMap(email.sender),
       email.cc,
       email.bcc,
       email.textBody,

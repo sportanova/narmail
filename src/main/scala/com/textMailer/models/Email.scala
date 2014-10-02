@@ -10,7 +10,7 @@ case class Email (
   recipients: Option[Map[String,String]],
   ts: Long,
   subject: String,
-  sender: String,
+  sender: Map[String,String], // cassandra hates 'from'
   cc: String,
   bcc: String,
   textBody: String,

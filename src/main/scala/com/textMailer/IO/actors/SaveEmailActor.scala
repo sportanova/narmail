@@ -59,13 +59,15 @@ class SaveEmailActor extends Actor {
       val threadId = metaData._6.getOrElse("")
       val gmId = metaData._7.getOrElse("")
       val recipients = metaData._2
+      val ts = metaData._8.getOrElse(0l) // TODO make these into a for comprehension and log an error if it doesn't work?
+      val subject = metaData._1.getOrElse("")
 
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
       val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
       val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
   
-//      val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
+//      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, cc.toString, bcc.toString, textBody, htmlBody)
 //      EmailTopicIO().asyncWrite(email)
 //      EmailConversationIO().asyncWrite(email)
 //      

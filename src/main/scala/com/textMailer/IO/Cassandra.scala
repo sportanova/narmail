@@ -59,7 +59,7 @@ class SimpleClient() {
       "recipients map<text,text>," +
       "ts bigint," +
       "subject text," +
-      "sender text," +
+      "sender map<text,text>," +
       "cc text," +
       "bcc text," +
       "text_body text," +
@@ -76,7 +76,7 @@ class SimpleClient() {
       "recipients map<text,text>," +
       "ts bigint," +
       "subject text," +
-      "sender text," +
+      "sender map<text,text>," +
       "cc text," +
       "bcc text," +
       "text_body text," +
