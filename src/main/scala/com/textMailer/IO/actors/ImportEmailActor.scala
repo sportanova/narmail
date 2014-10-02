@@ -67,14 +67,14 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id))
+      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId))
     }
     case ImportEmail(userId) => {
       val emailAccounts = userId match {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {
             ea.provider match {
-              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id)
+              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId)
               case _ =>
             }
          })
@@ -86,12 +86,12 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String): Unit = {
+  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String): Unit = {
     val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=30")
     val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
     val messageListRes = messageListReq.apply.map(res => {
       JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
-        case Some(ms) => getEmailActor ! GetGmailMessages(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken, emailAddress) // filter the http response into a list of gmail message ids
+        case Some(ms) => getEmailActor ! GetGmailMessages(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken, emailAddress, userId) // filter the http response into a list of gmail message ids
         case None => println(s"############ didn't find any messageids (access token probably expired)")
       }
       println(s"############# messageIds")

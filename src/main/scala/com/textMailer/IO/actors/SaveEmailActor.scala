@@ -41,7 +41,7 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 
 object SaveEmailActor {
-  case class SaveGmailMessage(messageJson: JValue, emailAddress: String)
+  case class SaveGmailMessage(messageJson: JValue, emailAddress: String, userId: String)
 }
 
 class SaveEmailActor extends Actor {
@@ -50,16 +50,13 @@ class SaveEmailActor extends Actor {
   implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
 
   def receive = {
-    case SaveGmailMessage(json, emailAddress) => {
-      println(s"======================== getting to saveemail child actor")
+    case SaveGmailMessage(json, emailAddress, userId) => {
+      println(s"======================== getting to SaveEmail child actor")
       val bodies = findMessageBodies(json)
       val metaData = findMessageMetaData(json, emailAddress)
       
-//      val recipients: TreeSet[String] = TreeSet[String]() ++ to ++ bcc ++ cc - emailAddress + sender
-//      println(s"@@@@@@@@@@@ recipientsSet $recipients")
-//      val recipientsString = recipients.toString
-//      val recipientsHash = md5Hash(recipientsString)
-//      
+      val recipientsHash = metaData._9
+  
 //      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
 //      val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
 //      val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
@@ -119,9 +116,9 @@ class SaveEmailActor extends Actor {
     case _ => sender ! "didn't match in SaveEmailDataActor"
   }
 
-  type Subject = Option[String]; type Recipients = Option[List[Map[String,String]]]; type Time = Option[Long]; type Id = Option[String]
+  type Subject = Option[String]; type Recipients = Option[List[Map[String,String]]]; type Time = Option[Long]; type Id = Option[String]; type RecipientsHash = String
 
-  def findMessageMetaData(json: JValue, emailAddress: String)(implicit fmt: DateTimeFormatter): (Subject, Recipients, Recipients, Recipients, Recipients, Id, Id, Time) = {
+  def findMessageMetaData(json: JValue, emailAddress: String)(implicit fmt: DateTimeFormatter): (Subject, Recipients, Recipients, Recipients, Recipients, Id, Id, Time, RecipientsHash) = {
     val payload = for {
       payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
     } yield payload
@@ -175,6 +172,14 @@ class SaveEmailActor extends Actor {
     
     val allRecipients = Some((to.getOrElse(List()) ++ from.getOrElse(List()) ++ cc.getOrElse(List())).filterNot(_.get("eAddress") == Some(emailAddress)))
 //    println(s"@@@@@@@@@@@@@@ allRecipients $allRecipients")
+
+    val recipientsTreeSet = TreeSet[String]() ++ allRecipients.get.flatMap(x => {
+      x.map {case (k,v) => v}
+    }).toSet    
+    //    println(s"@@@@@@@@@@@@@@ recipientsTreeSet $recipientsTreeSet")
+
+    val recipientsString = recipientsTreeSet.toString
+    val recipientsHash = md5Hash(recipientsString)
     
     val threadId = for {
       threadId <- json.values.asInstanceOf[Map[String,Any]].get("threadId")
@@ -194,7 +199,7 @@ class SaveEmailActor extends Actor {
     } yield timeLong)
 //    println(s"############## time $time")
  
-    (subject, allRecipients, to, from, cc, threadId, messageId, time)
+    (subject, allRecipients, to, from, cc, threadId, messageId, time, recipientsHash)
   }
   
   def findTime(time: String)(implicit fmt: DateTimeFormatter): Option[Long] = {

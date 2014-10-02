@@ -41,7 +41,7 @@ import akka.actor.Props
 import com.textMailer.IO.actors.SaveEmailActor._
 
 object GetEmailActor {
-  case class GetGmailMessages(messageIds: List[String], gmailUserId: String, accessToken: String, emailAddress: String)
+  case class GetGmailMessages(messageIds: List[String], gmailUserId: String, accessToken: String, emailAddress: String, userId: String)
 }
 
 class GetEmailActor extends Actor {
@@ -50,14 +50,14 @@ class GetEmailActor extends Actor {
   val saveEmailActor = context.actorOf(Props[SaveEmailActor], "SaveEmailActor")
 
   def receive = {
-    case GetGmailMessages(messageIds, gmailUserId, accessToken, emailAddress) => {
+    case GetGmailMessages(messageIds, gmailUserId, accessToken, emailAddress, userId) => {
       println(s"======================== getting to getEmailActor child actor")
       val batchBody = messageIds.foldLeft("")((acc, id) => acc + createBatchPart(gmailUserId, id)) + "--batch_narmalbatch--"
       val batchUrl = new URL("https://www.googleapis.com/batch")
       val batchReq = POST(batchUrl).addHeaders(("authorization", s"Bearer $accessToken"), ("Content-Type", "multipart/mixed; boundary=batch_narmalbatch")).addBody(batchBody)
       val batchRes = batchReq.apply.map(r => {
         val messageBodies = (r.toJValue.values.asInstanceOf[Map[String,String]].get("body") match {
-          case Some(b) => findJsonObjects(b).map(json => saveEmailActor ! SaveGmailMessage(json, emailAddress))
+          case Some(b) => findJsonObjects(b).map(json => saveEmailActor ! SaveGmailMessage(json, emailAddress, userId))
           case None => List()
         })
       })
