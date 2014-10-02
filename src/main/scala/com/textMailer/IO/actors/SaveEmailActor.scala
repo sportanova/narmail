@@ -41,7 +41,7 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 
 object SaveEmailActor {
-  case class SaveGmailMessage(messageJson: JValue, emailAddress: String, userId: String)
+  case class SaveGmailMessage(messageJson: JValue, emailAddress: String, userId: String, emailAccountId: String)
 }
 
 class SaveEmailActor extends Actor {
@@ -50,9 +50,8 @@ class SaveEmailActor extends Actor {
   implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
 
   def receive = {
-    case SaveGmailMessage(json, emailAddress, userId) => {
+    case SaveGmailMessage(json, emailAddress, userId, emailAccountId) => {
       println(s"======================== getting to SaveEmail child actor")
-      val bodies = findMessageBodies(json)
       val metaData = findMessageMetaData(json, emailAddress)
 
       val recipientsHash = metaData._9
@@ -61,46 +60,58 @@ class SaveEmailActor extends Actor {
       val recipients = metaData._2
       val ts = metaData._8.getOrElse(0l) // TODO make these into a for comprehension and log an error if it doesn't work?
       val subject = metaData._1.getOrElse("")
+      val emailSender = metaData._4.getOrElse(Map())
 
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
       val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
       val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
+      
+      val bodies = findMessageBodies(json)
+      val textBody = bodies match {
+        case Some(b) => b.get("textBody").getOrElse("")
+        case None => ""
+      }
+      val htmlBody = bodies match {
+        case Some(b) => b.get("htmlBody").getOrElse("")
+        case None => ""
+      }
   
-//      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, cc.toString, bcc.toString, textBody, htmlBody)
+//      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody)
 //      EmailTopicIO().asyncWrite(email)
 //      EmailConversationIO().asyncWrite(email)
 //      
-//      (for {
-//        te <- topicExists
-//        tc <- topicCount
-//        etc <- emailsByTopicCount
-//        ecc <- emailsByConversationCount
-//      } yield(te, tc, etc, ecc)) onComplete {
-//        case Success(c) => {
-//          val trueTopicCount = c._1 match {
-//            case Some(t) => c._2
-//            case None => c._2 + 1l
-//          }
-//        
-//          val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId, trueTopicCount, c._4) // do this last, give time to get topic count
-//          ConversationIO().asyncWrite(conversation)
-//          OrdConversationIO().asyncWrite(conversation)
-//          
-//          val topic = Topic(userId, recipientsHash, threadId, subject, ts, c._3)
-//          TopicIO().asyncWrite(topic)
-//          OrdTopicIO().asyncWrite(topic)
-//        }
-//        case Failure(ex) => {
-//          println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FAILED TO GET COUNTS")
-//          val conversation = Conversation(userId, recipientsHash, recipients, ts, emailAccountId, 0l, 0l) // do this last, give time to get topic count
-//          ConversationIO().asyncWrite(conversation)
-//          OrdConversationIO().asyncWrite(conversation)
-//          
-//          val topic = Topic(userId, recipientsHash, threadId, subject, ts, 0l)
-//          TopicIO().asyncWrite(topic)
-//          OrdTopicIO().asyncWrite(topic)
-//        }
+      (for {
+        te <- topicExists
+        tc <- topicCount
+        etc <- emailsByTopicCount
+        ecc <- emailsByConversationCount
+      } yield(te, tc, etc, ecc)) onComplete {
+        case Success(c) => {
+          val trueTopicCount = c._1 match {
+            case Some(t) => c._2
+            case None => c._2 + 1l
+          }
+        
+          val conversation = Conversation(userId, recipientsHash, recipients.get, ts, emailAccountId, trueTopicCount, c._4) // do this last, give time to get topic count
+          ConversationIO().asyncWrite(conversation)
+          OrdConversationIO().asyncWrite(conversation)
+          
+          val topic = Topic(userId, recipientsHash, threadId, subject, ts, c._3)
+          TopicIO().asyncWrite(topic)
+          OrdTopicIO().asyncWrite(topic)
+        }
+        case Failure(ex) => {
+          println(s"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FAILED TO GET COUNTS")
+          val conversation = Conversation(userId, recipientsHash, recipients.get, ts, emailAccountId, 0l, 0l) // do this last, give time to get topic count
+          ConversationIO().asyncWrite(conversation)
+          OrdConversationIO().asyncWrite(conversation)
+          
+          val topic = Topic(userId, recipientsHash, threadId, subject, ts, 0l)
+          TopicIO().asyncWrite(topic)
+          OrdTopicIO().asyncWrite(topic)
+        }
+      }
     }
     case _ => sender ! "didn't match in SaveEmailDataActor"
   }
@@ -248,7 +259,7 @@ class SaveEmailActor extends Actor {
         htmlMap <- parts.asInstanceOf[List[Map[String,Any]]].find(part => part.get("mimeType") == Some("text/html"))
         html <- htmlMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
       } yield(text, html)) match {
-        case Some(b) => Some(Map("text" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._1)), "html" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._2))))
+        case Some(b) => Some(Map("textBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._1)), "htmlBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._2))))
         case None => None
       }
     }

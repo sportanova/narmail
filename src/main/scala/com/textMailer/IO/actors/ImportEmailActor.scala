@@ -91,7 +91,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
     val messageListRes = messageListReq.apply.map(res => {
       JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
-        case Some(ms) => getEmailActor ! GetGmailMessages(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken, emailAddress, userId) // filter the http response into a list of gmail message ids
+        case Some(ms) => getEmailActor ! GetGmailMessages(ms.asInstanceOf[List[Map[String,String]]].map(_.get("id")).filter(_.isDefined).map(_.get), gmailUserId, accessToken, emailAddress, userId, emailAccountId) // filter the http response into a list of gmail message ids
         case None => println(s"############ didn't find any messageids (access token probably expired)")
       }
       println(s"############# messageIds")
