@@ -60,8 +60,8 @@ class SaveEmailDataActor extends Actor {
           case Some(b) => findJsonObjects(b).map(json => {
             val metaData = Try{findMessageMetaData(json)} match {
               case Success(s) => s.map({case (a,b) => b match {
-                case Some(d) => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "metaDataIssue", new DateTime().getMillis, Map("json" -> pretty(render(json))))); None
-                case None => println(s"")
+                case Some(d) => 
+                case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "metaDataIssue", new DateTime().getMillis, Map("json" -> pretty(render(json))))); None
               }})
 //                s match {
 //                case Some(m) => // m.map(d => println(s"====================== , $d"))
@@ -157,10 +157,12 @@ class SaveEmailDataActor extends Actor {
         } yield to)
       }
     }
-    println(s"############## time $time")
+//    println(s"############## time $time")
  
     Map("subject" -> subject, "to" -> to, "from" -> from, "threadId" -> threadId, "messageId" -> messageId, "cc" -> cc, "time" -> time)
   }
+  
+  def getRecipientInfo(recipients: String): List[(String,String)] = recipients.split(",").toList.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
   
   @tailrec private def findJsonObjects(str: String, json: List[JValue] = List(), currentIndex: Int = 0, startingIndex: Int = 0, openingBrackets: Int = 0, closingBrackets: Int = 0): List[JValue] = {
     str.slice(currentIndex, currentIndex + 1) match {

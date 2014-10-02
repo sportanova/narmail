@@ -764,8 +764,17 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
         }
         
         val results = findJsonObjects(json).map(j => {
-          println(s"################ ${findMessageMetaData(j)}")
+//          println(s"################ ${findMessageMetaData(j)}")
         })
+    }
+    
+    "k" in {
+      def getRecipientInfo(recipients: String): List[(String,String)] = recipients.split(",").toList.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
+      val cc = """Shaikh Riyaz <shaikh.r.a@gmail.com>, "user@spark.apache.org" <user@spark.apache.org>, Dibyendu Bhattacharya <dibyendu.bhattachary@gmail.com>"""
+      val users = cc.split(",").toList
+      val y = users.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
+      
+      println(s"######### users ${getRecipientInfo(cc)}")
     }
   }
   
