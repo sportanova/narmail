@@ -56,7 +56,7 @@ class SimpleClient() {
       "user_id text," +
       "thread_id text," + // TODO: add account id?
       "recipients_hash text," +
-      "recipients set<text>," +
+      "recipients map<text,text>," +
       "ts bigint," +
       "subject text," +
       "sender text," +
@@ -73,7 +73,7 @@ class SimpleClient() {
       "user_id text," +
       "thread_id text," + // TODO: add account id?
       "recipients_hash text," +
-      "recipients set<text>," +
+      "recipients map<text,text>," +
       "ts bigint," +
       "subject text," +
       "sender text," +
@@ -113,7 +113,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.conversations_by_user (" +
         "user_id text," +
         "recipients_hash text," +
-        "recipients set<text>," +
+        "recipients map<text,text>," +
         "ts bigint," +
         "email_account_id text," +
         "em_cnt bigint," +
@@ -125,7 +125,7 @@ class SimpleClient() {
       s"CREATE TABLE IF NOT EXISTS $keyspace.ordered_conversations_by_user (" +
         "user_id text," +
         "recipients_hash text," +
-        "recipients set<text>," +
+        "recipients map<text,text>," +
         "ts bigint," +
         "email_account_id text," +
         "em_cnt bigint," +

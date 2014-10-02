@@ -54,30 +54,17 @@ class SaveEmailActor extends Actor {
       println(s"======================== getting to SaveEmail child actor")
       val bodies = findMessageBodies(json)
       val metaData = findMessageMetaData(json, emailAddress)
-      
+
       val recipientsHash = metaData._9
+      val threadId = metaData._6.getOrElse("")
+      val gmId = metaData._7.getOrElse("")
+      val recipients = metaData._2
+
+      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
+      val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
+      val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
+      val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
   
-//      val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
-//      val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
-//      val emailsByTopicCount = EmailTopicIO().asyncCount(List(Eq("user_id", userId), Eq("thread_id", threadId)), 100).map(c => c + 1l)
-//      val emailsByConversationCount = EmailConversationIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(c => c + 1l)
-//      
-//      val textBody = (for{
-//        textValue <- body.get("text")
-//        text <- textValue
-//      } yield(text)) match {
-//        case Some(t) => t.toString
-//        case None => ""
-//      }
-//      
-//      val htmlBody = (for{
-//        htmlValue <- body.get("html")
-//        html <- htmlValue
-//      } yield(html)) match {
-//        case Some(h) => h.toString.split("""<div class="gmail_extra">""").toList.head.replace("\n", " ").replace("\r", " ")
-//        case None => ""
-//      }
-//
 //      val email = Email(gmId, userId, threadId, recipientsHash, Some(recipients), ts, subject, sender, cc.toString, bcc.toString, textBody, htmlBody)
 //      EmailTopicIO().asyncWrite(email)
 //      EmailConversationIO().asyncWrite(email)
@@ -116,7 +103,7 @@ class SaveEmailActor extends Actor {
     case _ => sender ! "didn't match in SaveEmailDataActor"
   }
 
-  type Subject = Option[String]; type Recipients = Option[List[Map[String,String]]]; type Time = Option[Long]; type Id = Option[String]; type RecipientsHash = String
+  type Subject = Option[String]; type Recipients = Option[Map[String,String]]; type Time = Option[Long]; type Id = Option[String]; type RecipientsHash = String
 
   def findMessageMetaData(json: JValue, emailAddress: String)(implicit fmt: DateTimeFormatter): (Subject, Recipients, Recipients, Recipients, Recipients, Id, Id, Time, RecipientsHash) = {
     val payload = for {
@@ -170,13 +157,11 @@ class SaveEmailActor extends Actor {
     } yield getRecipientInfo(cc)
 //    println(s"############## cc $cc")
     
-    val allRecipients = Some((to.getOrElse(List()) ++ from.getOrElse(List()) ++ cc.getOrElse(List())).filterNot(_.get("eAddress") == Some(emailAddress)))
+    val allRecipients = Some((to.getOrElse(Map()) ++ from.getOrElse(Map()) ++ cc.getOrElse(Map())).filterNot(_._2 == emailAddress))
 //    println(s"@@@@@@@@@@@@@@ allRecipients $allRecipients")
 
-    val recipientsTreeSet = TreeSet[String]() ++ allRecipients.get.flatMap(x => {
-      x.map {case (k,v) => v}
-    }).toSet    
-    //    println(s"@@@@@@@@@@@@@@ recipientsTreeSet $recipientsTreeSet")
+    val recipientsTreeSet = TreeSet[String]() ++ allRecipients.get.map{ case (k,v) => v}.toSet    
+//    println(s"@@@@@@@@@@@@@@ recipientsTreeSet $recipientsTreeSet")
 
     val recipientsString = recipientsTreeSet.toString
     val recipientsHash = md5Hash(recipientsString)
@@ -213,11 +198,13 @@ class SaveEmailActor extends Actor {
     }
   }
   
-  def getRecipientInfo(recipients: String): List[Map[String,String]] = {
+  def getRecipientInfo(recipients: String): Map[String,String] = {
     val tryRecipients = recipients.split(",").toList.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => {
       list match {
-        case xs if xs.size == 2 => Try{Map("name" -> xs(0), "eAddress" -> xs(1))}
-        case xs if xs.size == 1 => Try{Map("name" -> xs(0), "eAddress" -> xs(0))}
+//        case xs if xs.size == 2 => Try{Map("name" -> xs(0), "eAddress" -> xs(1))}
+//        case xs if xs.size == 1 => Try{Map("name" -> xs(0), "eAddress" -> xs(0))}
+        case xs if xs.size == 2 => Try{Map(xs(0) -> xs(1))}
+        case xs if xs.size == 1 => Try{Map(xs(0) -> xs(0))}
         case _ => {
           UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> recipients, "errorType" -> "recipientsIssue")))
           Failure(new IllegalArgumentException("Couldn't get Recipients"))
@@ -233,7 +220,7 @@ class SaveEmailActor extends Actor {
           None
         }
       }
-    }).filter(_.isDefined).map(_.get)
+    }).filter(_.isDefined).map(_.get).reduce((acc, recipients) => recipients ++ acc) // filter out failures, then flatten the list of maps into a single map
   }
   
   def findMessageBodies(json: JValue): Option[Map[String,String]] = {

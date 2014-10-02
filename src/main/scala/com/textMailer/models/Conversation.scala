@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 case class Conversation (
   userId: String,
   recipientsHash: String,
-  recipients: Set[String],
+  recipients: Map[String,String],
   ts: Long,
   emailAccountId: String,
   topicCount: Long,

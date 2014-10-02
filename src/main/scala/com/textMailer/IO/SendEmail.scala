@@ -25,26 +25,26 @@ import javax.mail.Message
 
 object SendEmail {
   def send(email: Email, from: String, oAuthToken: String): Unit = {
-    val connectionData = connectToSmtp("smtp.gmail.com", 587, "sportano@gmail.com", oAuthToken)
-    val transport = connectionData._1
-    val session = connectionData._2
-    
-    val message: MimeMessage = new MimeMessage(session);
-    message.setFrom(new InternetAddress(from));
-    email.recipients match {
-      case Some(r) => {
-        r.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
-        EmailTopicIO().write(email) // TODO: figure out what to do with new messages - how do we get the threadid
-
-        message.setSubject(email.subject);
-        message.setText(email.textBody);
-
-        transport.sendMessage(message, message.getAllRecipients());
-      }
-      case None => println(s"NO RECIPIENTS: NOT SENDING EMAIL")
-    }
-
-    transport.close();
+//    val connectionData = connectToSmtp("smtp.gmail.com", 587, "sportano@gmail.com", oAuthToken)
+//    val transport = connectionData._1
+//    val session = connectionData._2
+//    
+//    val message: MimeMessage = new MimeMessage(session);
+//    message.setFrom(new InternetAddress(from));
+//    email.recipients match {
+//      case Some(r) => {
+//        r.foreach(r => message.addRecipient(Message.RecipientType.TO, new InternetAddress(r)))
+//        EmailTopicIO().write(email) // TODO: figure out what to do with new messages - how do we get the threadid
+//
+//        message.setSubject(email.subject);
+//        message.setText(email.textBody);
+//
+//        transport.sendMessage(message, message.getAllRecipients());
+//      }
+//      case None => println(s"NO RECIPIENTS: NOT SENDING EMAIL")
+//    }
+//
+//    transport.close();
   }
   
   def connectToSmtp(host: String, port: Int, from: String, oAuthToken: String): (SMTPTransport, Session) = {

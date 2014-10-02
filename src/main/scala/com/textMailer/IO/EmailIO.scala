@@ -69,8 +69,8 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
     val subject = row.getString("subject")
     val sender = row.getString("sender")
     val recipientsHash = row.getString("recipients_hash")
-    val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String] match {
-      case x: Set[String] => Some(x)
+    val recipients: Option[Map[String,String]] = row.getMap("recipients", str.getClass, str.getClass).toMap match {
+      case x: Map[String,String] => Some(x)
       case null => None
     }
     val ts: java.lang.Long = row.getLong("ts")
@@ -96,7 +96,7 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
   def break(email: Email, boundStatement: BoundStatement): BoundStatement = {
     val ts: java.lang.Long = email.ts
     val recipients = email.recipients match {
-      case Some(r) => setAsJavaSet(r)
+      case Some(r) => mapAsJavaMap(r)
       case None => null
     }
 

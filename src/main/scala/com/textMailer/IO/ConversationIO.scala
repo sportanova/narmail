@@ -50,10 +50,10 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
   
   def build(row: Row): Conversation = {
     val str: java.lang.String = ""
+    val recipients: Map[String,String] = row.getMap("recipients", str.getClass, str.getClass).toMap
 
     val userId = row.getString("user_id")
     val recipientsHash = row.getString("recipients_hash")
-    val recipients = row.getSet("recipients", str.getClass).asScala.toSet[String]
     val ts = row.getLong("ts")
     val emailAccountId = row.getString("email_account_id")
     val topicCount = row.getLong("tp_cnt")
@@ -80,7 +80,7 @@ class ConversationIO(client: SimpleClient, table: String) extends QueryIO {
     boundStatement.bind(
       conversation.userId,
       conversation.recipientsHash,
-      setAsJavaSet(conversation.recipients),
+      mapAsJavaMap(conversation.recipients),
       conversation.ts.asInstanceOf[java.lang.Long],
       conversation.emailAccountId,
       topicCount,

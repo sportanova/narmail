@@ -798,7 +798,7 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   
   "sending emails" should {
     "do something" in {
-      val email = Email("123l", "someUserId", "4535335l", "recipients", Some(Set("sportano@gmail.com")), 234243l, "subject", "sender", "cc","bcc","body", "emailBodyHtml")
+//      val email = Email("123l", "someUserId", "4535335l", "recipients", Some(Set("sportano@gmail.com")), 234243l, "subject", "sender", "cc","bcc","body", "emailBodyHtml")
 //      SendEmail.send(email, "sportano@gmail.com", "ya29.igB_lAmnGVh0bCz3aUwoDx3T9IqWk65GL_fPklCKNdzxAp36GufbQstx")
     }
   }
