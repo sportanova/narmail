@@ -769,6 +769,8 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
         
         val results = findJsonObjects(json).map(j => {
 //          println(s"################ ${findMessageMetaData(j)}")
+          val x = j.values.asInstanceOf[Map[String,Any]].get("id")
+          println(s"################ JSON 1 ${x}")
         })
     }
     
@@ -784,15 +786,15 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
     "datetime parser" in {
 //      val x = DateTime.parse("Wed, 1 Oct 2014 22:12:45 -0700 (PDT)")
 //      val fmt = DateTimeFormat.forPattern("dddd, dd MMMM yyyy HH:mm:ss Z");
-      implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
-      def findTime(time: String)(implicit fmt: DateTimeFormatter): Try[Long] = {
-        val sanitizedTime = time.split("\\(")
-        Try{DateTime.parse(sanitizedTime(0).trim, fmt).getMillis}
-      }
-      val x = findTime("Sun, 28 Sep 2014 17:48:39 -0700")
-      println(s"######## x $x")
-      val y = findTime("Thu, 02 Oct 2014 00:57:06 +0000 (UTC)")
-      println(s"######## y $y")
+//      implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
+//      def findTime(time: String)(implicit fmt: DateTimeFormatter): Try[Long] = {
+//        val sanitizedTime = time.split("\\(")
+//        Try{DateTime.parse(sanitizedTime(0).trim, fmt).getMillis}
+//      }
+//      val x = findTime("Sun, 28 Sep 2014 17:48:39 -0700")
+//      println(s"######## x $x")
+//      val y = findTime("Thu, 02 Oct 2014 00:57:06 +0000 (UTC)")
+//      println(s"######## y $y")
     }
   }
   

@@ -54,11 +54,11 @@ class SaveEmailActor extends Actor {
       println(s"======================== getting to SaveEmail child actor")
       val metaData = findMessageMetaData(json, emailAddress)
 
-      val recipientsHash = metaData._9
+      val recipientsHash = metaData._9 // TODO make these into a for comprehension and log an error if it doesn't work?
       val threadId = metaData._6.getOrElse("")
       val gmId = metaData._7.getOrElse("")
       val recipients = metaData._2
-      val ts = metaData._8.getOrElse(0l) // TODO make these into a for comprehension and log an error if it doesn't work?
+      val ts = metaData._8.getOrElse(0l)
       val subject = metaData._1.getOrElse("")
       val emailSender = metaData._4.getOrElse(Map())
 
@@ -77,10 +77,10 @@ class SaveEmailActor extends Actor {
         case None => ""
       }
   
-//      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody)
-//      EmailTopicIO().asyncWrite(email)
-//      EmailConversationIO().asyncWrite(email)
-//      
+      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody)
+      EmailTopicIO().asyncWrite(email)
+      EmailConversationIO().asyncWrite(email)
+
       (for {
         te <- topicExists
         tc <- topicCount
