@@ -67,14 +67,14 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId))
+      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 60))
     }
     case ImportEmail(userId) => {
       val emailAccounts = userId match {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {
             ea.provider match {
-              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId)
+              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 100)
               case _ =>
             }
          })
@@ -86,10 +86,10 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String): Unit = {
+  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String, count: Int): Unit = {
     val lastImportedEmailIdFuture = UserEventIO().asyncFind(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1)
 
-    val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=30")
+    val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=$count")
     val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
     val messageListRes = messageListReq.apply.map(res => {
       JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
@@ -101,11 +101,13 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
             } yield gmId)) match {
               case Some(id) => { // recurring import
                 println(s"========================== last id $id")
-                val unwrittenMessages = ms.asInstanceOf[List[Map[String,String]]].reverse.takeWhile(messageInfo => messageInfo.get("id") != Some(id)).map(mInfo => mInfo.get("id")).filter(_.isDefined).map(_.get) // take elements until one equals the last imported email's id
+                val unwrittenMessages = ms.asInstanceOf[List[Map[String,String]]].takeWhile(messageInfo => messageInfo.get("id") != Some(id)).map(mInfo => mInfo.get("id")).filter(_.isDefined).map(_.get) // take elements until one equals the last imported email's id
                 
                 getEmailActor ! GetGmailMessages(unwrittenMessages, gmailUserId, accessToken, emailAddress, userId, emailAccountId) // filter the http response into a list of gmail message ids
-                println(s"############## unwrittenMessages ${unwrittenMessages.size}")
-                println(s"############## writtenMessages ${ms.asInstanceOf[List[Map[String,String]]].size}")
+                println(s"############## unwrittenMessages.size ${unwrittenMessages.size}")
+                println(s"############## unwrittenMessages ${unwrittenMessages}")
+                println(s"############## totalMessages ${ms.asInstanceOf[List[Map[String,String]]]}")
+                println(s"############## totalMessages.size ${ms.asInstanceOf[List[Map[String,String]]].size}")
                 
                 unwrittenMessages.headOption match {
                   case Some(id) => UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", new DateTime().getMillis, Map("gmailId" -> id)))
