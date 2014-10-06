@@ -28,10 +28,11 @@ import scala.util.Failure
 import com.textMailer.IO.UserEventIO
 import com.textMailer.models.UserEvent
 import org.joda.time.DateTime
+import akka.pattern.pipe
 
 object AccessTokenActor {
   case class RefreshGmailAccessTokens(userId: String)
-  case class AddGmailAccount(userId: Option[String], accessCode: Option[String])  
+  case class AddGmailAccount(userId: String, accessCode: String)  
 }
 
 class AccessTokenActor extends Actor {
@@ -48,19 +49,21 @@ class AccessTokenActor extends Actor {
 
   def receive = {
     case AddGmailAccount(userId, accessCode) => {  // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
-      val newAccount = (for {
-        id <- userId
-        ac <- accessCode
-        tokens <- getGmailAccessToken(ac)
-        at <- tokens.get("accessToken")
-        rt <- tokens.get("refreshToken")
-        email <- getGmailAddress(at)
-      } yield (Map("userId" -> id, "accessToken" -> at, "email" -> email, "refreshToken" -> rt))) match {
-        case Some(userInfo) => EmailAccountIO().write(EmailAccount(userInfo.get("userId").get, UUIDs.random().toString, "gmail", userInfo.get("email").get, userInfo.get("accessToken").get, userInfo.get("refreshToken").get))
-        case None => Failure(new Throwable("Couldn't create account: Missing id || ac || tokens || at || rt || email"))
-      }
+      val newAccount = getGmailAccessToken(accessCode).map(tokens => {
+        tokens match {
+          case Some(ts) => {
+            getUserGmailInfo(ts.get("accessToken").get, ts.get("idToken").get).map(gmailInfo => {
+              gmailInfo match {
+                case Some(info) => EmailAccountIO().write(EmailAccount(userId, UUIDs.random().toString, "gmail", info.get("email").get, ts.get("accessToken").get, ts.get("refreshToken").get))
+                case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"userId:$userId", "errorType" -> "gmailUserInfo")))
+              }
+            })
+          }
+          case None => println(s"!!!!!!!!!!!!!! NO TOKEN INFO")
+        }
+      })
       
-      sender ! newAccount
+      newAccount pipeTo sender
     }
     case "recurringRefresh" => {
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
@@ -117,32 +120,34 @@ class AccessTokenActor extends Actor {
     }
   }
   
-  def getGmailAccessToken(reqTok: String): Option[Map[String,String]] = {
+  def getGmailAccessToken(reqTok: String): Future[Option[Map[String,String]]] = {
     val oauthURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(oauthURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded")).addBody(s"code=${URLEncoder.encode(reqTok, "UTF-8")}&redirect_uri=${URLEncoder.encode(gmailOauthRedirect, "UTF-8")}&client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&scope=&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=${URLEncoder.encode("authorization_code", "UTF-8")}")
-    val json = Await.result(req.apply, 10.second).toJValue
-    
-    println(s"############## json $json")
+    req.apply.map(json => {
+      println(s"############## json $json")
 
-    for {
-      body <- json.values.asInstanceOf[Map[String,Any]].get("body")
-      innerJSON <- Some(JsonParser.parse(body.toString).values.asInstanceOf[Map[String,String]])
-      at <- innerJSON.get("access_token")
-      rt <- innerJSON.get("refresh_token")
-    } yield(Map("accessToken" -> at, "refreshToken" -> rt))
+      for {
+        body <- json.toJValue.values.asInstanceOf[Map[String,Any]].get("body")
+        innerJSON <- Some(JsonParser.parse(body.toString).values.asInstanceOf[Map[String,String]])
+        at <- innerJSON.get("access_token")
+        rt <- innerJSON.get("refresh_token")
+        idT <- innerJSON.get("id_token")
+      } yield(Map("accessToken" -> at, "refreshToken" -> rt, "idToken" -> idT))
+    })
   }
-  
-  def getGmailAddress(accessToken: String): Option[String] = {
-    val url = new URL("https://www.googleapis.com/userinfo/email?alt=json")
-    val req = GET(url).addHeaders(("authorization", s"Bearer $accessToken"))
-    val res = Await.result(req.apply, 10.second).toJValue
-    
-    println(s"############## res $res")
 
-    for {
-      body <- res.values.asInstanceOf[Map[String,Any]].get("body")
-      data <- JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]].get("data")
-      email <- data.asInstanceOf[Map[String,String]].get("email")
-    } yield(email)
+  def getUserGmailInfo(accessToken: String, idToken: String): Future[Option[Map[String,String]]] = {
+    val url = new URL(s"https://www.googleapis.com/oauth2/v1/tokeninfo?id_token=$idToken")
+    val req = GET(url).addHeaders(("authorization", s"Bearer $accessToken"))
+    req.apply.map(json => {
+      println(s"@@@@@@@@@@ user info $json")
+
+      for {
+        body <- json.toJValue.values.asInstanceOf[Map[String,Any]].get("body")
+        parsedBody <- Some(JsonParser.parse(body.toString).values.asInstanceOf[Map[String,Any]])
+        email <- parsedBody.get("email")
+        userId <- parsedBody.get("user_id")
+      } yield (Map("gmailUserId" -> userId.toString, "email" -> email.toString))
+    })
   }
 }

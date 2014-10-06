@@ -887,7 +887,7 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
 //     println(s"########## json $json")
 
       val email1 = Email("123l", "someUserId", "4535335l", "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml")
-      SendEmail.send(email1, "100030981325891290860", "ya29.lgBv-SEWcPypOGICGQPvciXqIwwAP8n0w2eHRZj-oQlXS_8Y7LWOl5ts")
+//      SendEmail.send(email1, "100030981325891290860", "ya29.lgBv-SEWcPypOGICGQPvciXqIwwAP8n0w2eHRZj-oQlXS_8Y7LWOl5ts")
       
 //       https://www.googleapis.com/upload/gmail/v1/users/userId/messages/send
     }
