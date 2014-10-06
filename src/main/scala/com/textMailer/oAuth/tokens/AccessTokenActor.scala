@@ -54,12 +54,12 @@ class AccessTokenActor extends Actor {
           case Some(ts) => {
             getUserGmailInfo(ts.get("accessToken").get, ts.get("idToken").get).map(gmailInfo => {
               gmailInfo match {
-                case Some(info) => EmailAccountIO().write(EmailAccount(userId, UUIDs.random().toString, "gmail", info.get("email").get, ts.get("accessToken").get, ts.get("refreshToken").get))
+                case Some(info) => EmailAccountIO().write(EmailAccount(userId, info.get("gmailUserId").get, "gmail", info.get("email").get, ts.get("accessToken").get, ts.get("refreshToken").get))
                 case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"userId:$userId", "errorType" -> "gmailUserInfo")))
               }
             })
           }
-          case None => println(s"!!!!!!!!!!!!!! NO TOKEN INFO")
+          case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"userId:$userId", "errorType" -> "getAccessToken")))
         }
       })
       
