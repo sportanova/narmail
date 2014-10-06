@@ -67,7 +67,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 60))
+      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 40))
     }
     case ImportEmail(userId) => {
       val emailAccounts = userId match {
@@ -86,7 +86,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String, count: Int): Unit = {
+  def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String, count: Int): Unit = { // if number of new messages is > count, will miss those messages
     val lastImportedEmailIdFuture = UserEventIO().asyncFind(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1)
 
     val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=$count")

@@ -47,7 +47,7 @@ object SaveEmailActor {
 class SaveEmailActor extends Actor {
   import com.textMailer.IO.actors.SaveEmailActor._
   implicit val httpClient = new ApacheHttpClient
-  implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
+  implicit val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z")
 
   def receive = {
     case SaveGmailMessage(json, emailAddress, userId, emailAccountId) => {

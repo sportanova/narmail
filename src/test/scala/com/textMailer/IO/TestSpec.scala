@@ -18,6 +18,10 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import scala.util.Try
+import java.io.ByteArrayOutputStream
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
+import net.liftweb.json.Extraction._
 
 class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   PrepareData()
@@ -767,18 +771,18 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
           }
         }
         
-        val results = findJsonObjects(json).map(j => {
+//        val results = findJsonObjects(json).map(j => {
 //          println(s"################ ${findMessageMetaData(j)}")
-          val x = j.values.asInstanceOf[Map[String,Any]].get("id")
-          println(s"################ JSON 1 ${x}")
-        })
+//          val x = j.values.asInstanceOf[Map[String,Any]].get("id")
+//          println(s"################ JSON 1 ${x}")
+//        })
     }
     
     "k" in {
-      def getRecipientInfo(recipients: String): List[(String,String)] = recipients.split(",").toList.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
-      val cc = """Shaikh Riyaz <shaikh.r.a@gmail.com>, "user@spark.apache.org" <user@spark.apache.org>, Dibyendu Bhattacharya <dibyendu.bhattachary@gmail.com>"""
-      val users = cc.split(",").toList
-      val y = users.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
+//      def getRecipientInfo(recipients: String): List[(String,String)] = recipients.split(",").toList.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
+//      val cc = """Shaikh Riyaz <shaikh.r.a@gmail.com>, "user@spark.apache.org" <user@spark.apache.org>, Dibyendu Bhattacharya <dibyendu.bhattachary@gmail.com>"""
+//      val users = cc.split(",").toList
+//      val y = users.map(u => u.split(" <").toList.map(c => c.replaceAll(">", "").trim)).map(list => (list(0), list(1)))
       
 //      println(s"######### users ${getRecipientInfo(cc)}")
     }
@@ -800,8 +804,92 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   
   "sending emails" should {
     "do something" in {
-//      val email = Email("123l", "someUserId", "4535335l", "recipients", Some(Set("sportano@gmail.com")), 234243l, "subject", "sender", "cc","bcc","body", "emailBodyHtml")
-//      SendEmail.send(email, "sportano@gmail.com", "ya29.igB_lAmnGVh0bCz3aUwoDx3T9IqWk65GL_fPklCKNdzxAp36GufbQstx")
+//      val email = Email("123", "someUserId", "4535335", "recipients", Some(Map("Stephen Portanova" -> "portanova@me.com", "Elizabeth Portanova" -> "elizabethportanova@gmail.com")), 234243l, "subject", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml")
+      val email = Email("123", "someUserId", "4535335", "recipients", Some(Map("Stephen Portanova" -> "portanova@me.com")), 234243l, "subject", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml")
+      def createRawMessage(email: Email): String = {
+        val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z")
+
+        val from = s"From: ${formatRawMessageRecipients(email.sender)}\n"
+        val to = s"To: ${formatRawMessageRecipients(email.recipients.get)}\n"
+        val subject = "Subject: " + email.subject + "\n"
+        val date = "Date: " + fmt.print(new DateTime(email.ts)) + "\n\n"
+        val message = email.textBody
+        
+        Base64.encodeBase64URLSafeString((from + to + subject + date + message).getBytes)
+      }
+      def formatRawMessageRecipients(recipients: Map[String,String]): String = {
+        val str = recipients.foldLeft("")((acc, recipients) => {
+          acc + " " + recipients._1 + " <" + recipients._2 + ">," 
+        })
+        str.slice(0, str.length - 1)
+      }
+      
+      def createHeaders(email: Email): List[Map[String,String]] = {
+        val formattedTo = email.recipients.get.foldLeft("")((acc, recipient) => {
+          acc + " " + recipient._1 + " " + recipient._2 + ","
+        }) match {
+          case x => x.slice(0, x.length - 1)
+        }
+        val to = Map("name" -> "to", "value" -> formattedTo)
+
+        val formattedFrom = email.sender.toList.headOption match {
+          case Some(sender) => sender._1 + " " + sender._2
+          case None => throw new IllegalArgumentException("this message has no sender"); ""
+        }
+        val from = Map("name" -> "from", "value" -> formattedFrom)
+        
+        val subject = Map("name" -> "subject", "value" -> email.subject)
+        
+        List(to, from, subject)
+      }
+      val headers = createHeaders(email)
+//      println(s"@@@@@@@@@@@ headers $headers")
+      implicit val formats = net.liftweb.json.DefaultFormats
+      
+      def createSendHTTPBody(email: Email): String = {
+        val start = "--narmal_send\nContent-Type: application/json; charset=UTF-8\n\n"
+        val end = "\n\n--narmal_send\nContent-Type: message/rfc822\n\n--narmal_send--"
+
+        val rawEmail = createRawMessage(email)
+        val headers = createHeaders(email)
+        val payload = Map("headers" -> headers, "mimeType" -> "text/plain")
+        val json = compact(render(decompose(Map("raw" -> rawEmail, "payload" -> payload))))
+        
+        start + json + end
+      }
+      val x = createSendHTTPBody(email)
+//      println(s"########## body $x")
+//      val message = "From: John Doe <sportano@gmail.com>\nTo: Mary Smith <sportano@gmail.com>, Stephen Portanova <portanova@me.com>\nSubject: Saying Hello\nDate: Fri, 21 Nov 1997 09:55:06 -0600\nMessage-ID: <sportano@gmail.com>\n\nThis is a message just to say hello. So, Hello."
+        
+//    var bytes: ByteArrayOutputStream = new ByteArrayOutputStream();
+//    email.writeTo(bytes);
+//    String encodedEmail = Base64.encodeBase64URLSafeString(bytes.toByteArray());
+
+      val rawMessage = createRawMessage(email)
+      
+//      {
+//    "name": "To",
+//    "value": "\"dev@spark.apache.org\" \u003cdev@spark.apache.org\u003e, \"user@spark.apache.org\" \u003cuser@spark.apache.org\u003e, Xiangrui Meng \u003cmengxr@gmail.com\u003e, DB Tsai \u003cdbtsai@dbtsai.com\u003e"
+//   }
+      
+      val json = s"""{    
+       "raw": "$rawMessage",  
+       "payload": { 
+         "headers": [ 
+           { "name": "to", "value": "portanova@me.com"}, 
+           { "name": "from","value": "sportano@gmail.com" }, 
+           { "name": "subject", "value": "Saying Hello"  } 
+         ],
+         "mimeType": "text/plain" 
+       }
+      }"""
+       
+//     println(s"########## json $json")
+
+      val email1 = Email("123l", "someUserId", "4535335l", "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml")
+      SendEmail.send(email1, "100030981325891290860", "ya29.lgBv-SEWcPypOGICGQPvciXqIwwAP8n0w2eHRZj-oQlXS_8Y7LWOl5ts")
+      
+//       https://www.googleapis.com/upload/gmail/v1/users/userId/messages/send
     }
   }
 }
