@@ -80,7 +80,7 @@ class SaveEmailActor extends Actor {
         case None => ""
       }
   
-      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody, messageId, inReplyTo, references)
+      val email = Email(gmId, userId, Some(threadId), recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody, messageId, inReplyTo, references)
       EmailTopicIO().asyncWrite(email)
       EmailConversationIO().asyncWrite(email)
 

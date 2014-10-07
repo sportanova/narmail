@@ -58,7 +58,7 @@ object SendEmail {
         threadId <- resMap.get("threadId")
       } yield (id, threadId)) match {
         case Some(ids) => {
-          val updatedEmail = email.copy(id = ids._1.toString, threadId = ids._2.toString)
+          val updatedEmail = email.copy(id = ids._1.toString, threadId = Some(ids._2.toString))
           EmailConversationIO().asyncWrite(updatedEmail)
           EmailTopicIO().asyncWrite(updatedEmail)
         }

@@ -5,7 +5,7 @@ import java.util.UUID
 case class Email (
   id: String,
   userId: String,
-  threadId: String,
+  threadId: Option[String],
   recipientsHash: String,
   recipients: Option[Map[String,String]],
   ts: Long,

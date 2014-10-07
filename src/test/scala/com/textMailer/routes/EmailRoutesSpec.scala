@@ -40,8 +40,8 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       val recipientsHash = "dasfasfasfasd"
       val threadId = "4534535"
       TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1", 1l, 2l))
-      val email1 = Email("123", "someId", threadId, recipientsHash, None, 11l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", None, None)
-      val email2 = Email("321", "someId", threadId, recipientsHash, None, 12l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", Some("thing"), Some("else"))
+      val email1 = Email("123", "someId", Some(threadId), recipientsHash, None, 11l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", None, None)
+      val email2 = Email("321", "someId", Some(threadId), recipientsHash, None, 12l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", Some("thing"), Some("else"))
       EmailTopicIO().write(email1)
       EmailTopicIO().write(email2)
 
@@ -59,7 +59,7 @@ class EmailRoutesSpec extends MutableScalatraSpec {
     "send an email" in {
 
       implicit val formats = Serialization.formats(NoTypeHints)
-      val email1 = org.json4s.jackson.Serialization.write(Email("123l", "1", "2342342l", "234242", Some(Map("sportano@gmail.com" -> "sportano@gmail.com")), 11l, "subject1", Map("dude@gmail.com" -> "dude@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId"))
+      val email1 = org.json4s.jackson.Serialization.write(Email("123l", "1", Some("2342342l"), "234242", Some(Map("sportano@gmail.com" -> "sportano@gmail.com")), 11l, "subject1", Map("dude@gmail.com" -> "dude@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId"))
 
       post(s"/${gmailAccount.id}", email1, Map("Content-Type" -> "application/json")) {
         

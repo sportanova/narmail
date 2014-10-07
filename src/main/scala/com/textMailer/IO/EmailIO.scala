@@ -65,7 +65,10 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
 
     val id = row.getString("id")
     val userId = row.getString("user_id")
-    val threadId = row.getString("thread_id")
+    val threadId = row.getString("thread_id") match {
+      case null => None
+      case x => Some(x)
+    }
     val subject = row.getString("subject")
     val sender: Map[String,String] = row.getMap("sender", str.getClass, str.getClass).toMap
     val recipientsHash = row.getString("recipients_hash")
@@ -116,11 +119,15 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
       case Some(r) => r
       case None => null
     }
+    val threadId = email.threadId match {
+      case Some(x) => x
+      case None => null
+    } 
 
     boundStatement.bind(
       email.id,
       email.userId,
-      email.threadId,
+      threadId,
       email.recipientsHash,
       recipients,
       ts,

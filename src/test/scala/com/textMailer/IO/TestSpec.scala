@@ -782,7 +782,7 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   "sending emails" should {
     "do something" in {
 //      val email = Email("123", "someUserId", "4535335", "recipients", Some(Map("Stephen Portanova" -> "portanova@me.com", "Elizabeth Portanova" -> "elizabethportanova@gmail.com")), 234243l, "subject", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml")
-      val email = Email("123", "someUserId", "4535335", "recipients", Some(Map("Stephen Portanova" -> "portanova@me.com")), 234243l, "subject", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
+      val email = Email("123", "someUserId", Some("4535335"), "recipients", Some(Map("Stephen Portanova" -> "portanova@me.com")), 234243l, "subject", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
       def createRawMessage(email: Email): String = {
         val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z")
 
@@ -863,7 +863,7 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
        
 //     println(s"########## json $json")
 
-      val email1 = Email("123l", "someUserId", "4535335l", "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
+      val email1 = Email("123l", "someUserId", Some("4535335l"), "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
 //      SendEmail.send(email1, "100030981325891290860", "ya29.lgBv-SEWcPypOGICGQPvciXqIwwAP8n0w2eHRZj-oQlXS_8Y7LWOl5ts")
       
 //       https://www.googleapis.com/upload/gmail/v1/users/userId/messages/send
