@@ -100,9 +100,9 @@ class SimpleClient() {
     ");")
     
     session.execute(
-      s"CREATE TABLE IF NOT EXISTS $keyspace.email_accounts (" + // TODO: add gmail_user_id 100030981325891290860
+      s"CREATE TABLE IF NOT EXISTS $keyspace.email_accounts (" + // 100030981325891290860
       "user_id text," +
-      "id text," +
+      "id text," + // id is equivalent to provider user id => gmailUserId
       "provider text," +
       "username text," +
       "access_token text," +

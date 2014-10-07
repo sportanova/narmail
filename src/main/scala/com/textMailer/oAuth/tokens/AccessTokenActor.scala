@@ -68,49 +68,54 @@ class AccessTokenActor extends Actor {
     case "recurringRefresh" => {
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
       
-      val results = (for {
-        userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
-        emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => {
-        (refreshGmailAccessToken(ea), ea.userId)
+      val emailAccountsFutures = UserEventIO().asyncFind(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ues => { // grab ids from user events, then get email accounts
+        ues.map(_.data.get("userId")).filter(_.isDefined).map(_.get).map(id => {
+          EmailAccountIO().asyncFind(List(Eq("user_id",id)), 10)
+        })
       })
       
-      results.map(r => {
-        r._1 match {
-          case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
-          case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString(r._2), "refreshToken", new DateTime().getMillis, Map("status" -> "failed")))// TODO: instead create error table and log this
-        }
-      })
+      for {
+        ues <- emailAccountsFutures
+        eas <- Future.sequence(ues)
+      } yield {
+        eas.flatMap(ea => ea).map(ea => {
+          refreshGmailAccessToken1(ea).map(acc => {
+            acc match {
+              case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
+              case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"userId${ea.userId}","errorType" -> "tokenRefreshFailure")))
+            }
+          })
+        })
+      }
     }
-    case RefreshGmailAccessTokens(userId) => {
-      val refreshedAccounts = (for {
-        ea <- EmailAccountIO().find(List(Eq("user_id",userId)), 10) // TODO: MAKE THIS NOT GMAIL SPECIFIC. UPDATE ALL ACCOUNTS
-        refreshedEA <- Some(refreshGmailAccessToken(ea))
-      } yield(refreshedEA))
-      sender ! refreshedAccounts.map(acc => {
-        acc match {
+
+    case RefreshGmailAccessTokens(userId) => { // TODO: no idea if this works. haven't used it in a while
+      val emailAccounts = EmailAccountIO().asyncFind(List(Eq("user_id",userId)), 10)
+
+      (for {
+        eas <- emailAccounts
+        refreshedEAs <- Future.sequence(eas.map(x => refreshGmailAccessToken1(x)))
+      } yield {
+        refreshedEAs.map(acc => { acc match {
           case Success(a) => s"Successfully updated ${a.id} email account"
           case Failure(ex) => s"Failed to update account for user: $userId . Reason: $ex"
-        }
-      })
+        }})
+      }) pipeTo sender
     }
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def refreshGmailAccessToken(emailAccount: EmailAccount): Try[EmailAccount] = {
+  def refreshGmailAccessToken1(emailAccount: EmailAccount): Future[Try[EmailAccount]] = {
     val refreshURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(refreshURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded"))
       .addBody(s"client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=refresh_token&refresh_token=${emailAccount.refreshToken}")
 
-    Try{Await.result(req.apply, 10.second).toJValue} match {
-      case Success(json) => {
-        getValueFromJson(json, "body", "access_token") match {
-          case Some(at) => EmailAccountIO().write(emailAccount.copy(accessToken = at))
-          case None => Failure(new Throwable("couldn't get accessToken value from json"))
-        }
+    req.apply.map(res => {
+      getValueFromJson(res.toJValue, "body", "access_token") match {
+        case Some(at) => EmailAccountIO().write(emailAccount.copy(accessToken = at))
+        case None => Failure(new Throwable("couldn't get accessToken value from json"))
       }
-      case Failure(ex) => Failure(ex)
-    }
+    })
   }
 
   def getValueFromJson(json: JValue, firstField: String, secondField: String): Option[String] = {
