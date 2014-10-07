@@ -78,14 +78,23 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
     val bcc = row.getString("bcc")
     val textBody = row.getString("text_body")
     val htmlBody = row.getString("html_body")
+    val msgId = row.getString("msg_id")
+    val inReplyTo: Option[String] = row.getString("reply_to") match {
+      case x: String => Some(x)
+      case null => None
+    }
+    val references: Option[String] = row.getString("references") match {
+      case x: String => Some(x)
+      case null => None
+    }
     
-    Email(id, userId, threadId, recipientsHash, recipients, ts, subject, sender, cc, bcc, textBody, htmlBody)
+    Email(id, userId, threadId, recipientsHash, recipients, ts, subject, sender, cc, bcc, textBody, htmlBody, msgId, inReplyTo, references)
   }
   
   val preparedStatement = session.prepare(
     s"INSERT INTO $keyspace.$table " +
-    "(id, user_id, thread_id, recipients_hash, recipients, ts, subject, sender, cc, bcc, text_body, html_body) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+    "(id, user_id, thread_id, recipients_hash, recipients, ts, subject, sender, cc, bcc, text_body, html_body, msg_id, reply_to, references) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
   
   val curriedWrite = curryWrite(session)(preparedStatement)(break) _
 
@@ -97,6 +106,14 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
     val ts: java.lang.Long = email.ts
     val recipients = email.recipients match {
       case Some(r) => mapAsJavaMap(r)
+      case None => null
+    }
+    val inReplyTo = email.inReplyTo match {
+      case Some(r) => r
+      case None => null
+    }
+    val references = email.references match {
+      case Some(r) => r
       case None => null
     }
 
@@ -112,7 +129,10 @@ class EmailIO(client: SimpleClient, table: String) extends QueryIO {
       email.cc,
       email.bcc,
       email.textBody,
-      email.htmlBody
+      email.htmlBody,
+      email.messageId,
+      inReplyTo,
+      references
     )
   }
 }

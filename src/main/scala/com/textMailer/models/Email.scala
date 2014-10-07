@@ -14,5 +14,8 @@ case class Email (
   cc: String,
   bcc: String,
   textBody: String,
-  htmlBody: String
+  htmlBody: String,
+  messageId: String,
+  inReplyTo: Option[String] = None,
+  references: Option[String] = None
 ) extends Model

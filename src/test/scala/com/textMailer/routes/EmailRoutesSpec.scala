@@ -40,15 +40,15 @@ class EmailRoutesSpec extends MutableScalatraSpec {
       val recipientsHash = "dasfasfasfasd"
       val threadId = "4534535"
       TopicIO().write(Topic(user.id, recipientsHash, threadId, "subject1", 1l, 2l))
-      val email1 = Email("123", "someId", threadId, recipientsHash, None, 11l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml")
-      val email2 = Email("321", "someId", threadId, recipientsHash, None, 12l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml")
+      val email1 = Email("123", "someId", threadId, recipientsHash, None, 11l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", None, None)
+      val email2 = Email("321", "someId", threadId, recipientsHash, None, 12l, "subject1", Map("sportano@gmail.com" -> "sportano@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId", Some("thing"), Some("else"))
       EmailTopicIO().write(email1)
       EmailTopicIO().write(email2)
 
       get(s"/${user.id}/${threadId}") {
         status must_== 200
         val res = response.body
-        res === """[{"id":"321","userId":"someId","threadId":"4534535","recipientsHash":"dasfasfasfasd","recipients":{},"ts":12,"subject":"subject1","sender":{"sportano@gmail.com":"sportano@gmail.com"},"cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"},{"id":"123","userId":"someId","threadId":"4534535","recipientsHash":"dasfasfasfasd","recipients":{},"ts":11,"subject":"subject1","sender":{"sportano@gmail.com":"sportano@gmail.com"},"cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml"}]"""
+        res === """[{"id":"321","userId":"someId","threadId":"4534535","recipientsHash":"dasfasfasfasd","recipients":{},"ts":12,"subject":"subject1","sender":{"sportano@gmail.com":"sportano@gmail.com"},"cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml","messageId":"msgId","inReplyTo":"thing","references":"else"},{"id":"123","userId":"someId","threadId":"4534535","recipientsHash":"dasfasfasfasd","recipients":{},"ts":11,"subject":"subject1","sender":{"sportano@gmail.com":"sportano@gmail.com"},"cc":"cc","bcc":"bcc","textBody":"emailBodyText","htmlBody":"emailBodyHtml","messageId":"msgId"}]"""
       }
     }
   }
@@ -59,7 +59,7 @@ class EmailRoutesSpec extends MutableScalatraSpec {
     "send an email" in {
 
       implicit val formats = Serialization.formats(NoTypeHints)
-      val email1 = org.json4s.jackson.Serialization.write(Email("123l", "1", "2342342l", "234242", Some(Map("sportano@gmail.com" -> "sportano@gmail.com")), 11l, "subject1", Map("dude@gmail.com" -> "dude@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml"))
+      val email1 = org.json4s.jackson.Serialization.write(Email("123l", "1", "2342342l", "234242", Some(Map("sportano@gmail.com" -> "sportano@gmail.com")), 11l, "subject1", Map("dude@gmail.com" -> "dude@gmail.com"), "cc", "bcc", "emailBodyText", "emailBodyHtml", "msgId"))
 
       post(s"/${gmailAccount.id}", email1, Map("Content-Type" -> "application/json")) {
         

@@ -61,6 +61,9 @@ class SaveEmailActor extends Actor {
       val ts = metaData._8.getOrElse(0l)
       val subject = metaData._1.getOrElse("")
       val emailSender = metaData._4.getOrElse(Map())
+      val messageId = metaData._10.getOrElse("")
+      val inReplyTo = metaData._11
+      val references = metaData._12
 
       val topicExists = TopicIO().asyncFind(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100).map(topic => {topic.headOption}) // get futures started => => =>
       val topicCount = TopicIO().asyncCount(List(Eq("user_id", userId), Eq("recipients_hash", recipientsHash)), 100)
@@ -70,14 +73,14 @@ class SaveEmailActor extends Actor {
       val bodies = findMessageBodies(json)
       val textBody = bodies match {
         case Some(b) => b.get("textBody").getOrElse("")
-        case None => ""
+        case None => println(s"!!!!!!!!!!!!!!!!!!!!!!! NO MESSAGE BODY ${pretty(render(json))}"); ""
       }
       val htmlBody = bodies match {
         case Some(b) => b.get("htmlBody").getOrElse("")
         case None => ""
       }
   
-      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody)
+      val email = Email(gmId, userId, threadId, recipientsHash, recipients, ts, subject, emailSender, "cc", "bcc", textBody, htmlBody, messageId, inReplyTo, references)
       EmailTopicIO().asyncWrite(email)
       EmailConversationIO().asyncWrite(email)
 
@@ -118,7 +121,7 @@ class SaveEmailActor extends Actor {
 
   type Subject = Option[String]; type Recipients = Option[Map[String,String]]; type Time = Option[Long]; type Id = Option[String]; type RecipientsHash = String
 
-  def findMessageMetaData(json: JValue, emailAddress: String)(implicit fmt: DateTimeFormatter): (Subject, Recipients, Recipients, Recipients, Recipients, Id, Id, Time, RecipientsHash) = {
+  def findMessageMetaData(json: JValue, emailAddress: String)(implicit fmt: DateTimeFormatter): (Subject, Recipients, Recipients, Recipients, Recipients, Id, Id, Time, RecipientsHash, Id, Id, Id) = {
     val payload = for {
       payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
     } yield payload
@@ -139,6 +142,33 @@ class SaveEmailActor extends Actor {
       subject <- subjectOpt.get("value")
     } yield subject
 //    println(s"############## subject $subject")
+    
+    val messageId = (for { // TODO: occasionally doesn't get a header
+      headers <- headers
+      messageIdOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Message-ID"))
+      messageId <- messageIdOpt.get("value")
+    } yield messageId) match {
+      case Some(id) => Some(id)
+      case None => {
+        for {
+          headers <- headers
+          messageIdOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("Message-Id"))
+          messageId <- messageIdOpt.get("value")
+        } yield messageId
+      }
+    }
+
+    val inReplyTo = for {
+      headers <- headers
+      inReplyToOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("In-Reply-To"))
+      inReplyTo <- inReplyToOpt.get("value")
+    } yield inReplyTo
+    
+    val references = for {
+      headers <- headers
+      referencesOpt <- headers.asInstanceOf[List[Map[String,String]]].find(_.get("name") == Some("References"))
+      references <- referencesOpt.get("value")
+    } yield references
     
     val to = (for {
       headers <- headers
@@ -184,9 +214,9 @@ class SaveEmailActor extends Actor {
     } yield threadId.toString
 //    println(s"############## threadId $threadId")
     
-    val messageId = for {
-      messageId <- json.values.asInstanceOf[Map[String,Any]].get("id")
-    } yield messageId.toString
+    val gmailId = for {
+      gmailId <- json.values.asInstanceOf[Map[String,Any]].get("id")
+    } yield gmailId.toString
 //    println(s"############## messageId $messageId")
     
     val time = (for {
@@ -197,7 +227,7 @@ class SaveEmailActor extends Actor {
     } yield timeLong)
 //    println(s"############## time $time")
  
-    (subject, allRecipients, to, from, cc, threadId, messageId, time, recipientsHash)
+    (subject, allRecipients, to, from, cc, threadId, gmailId, time, recipientsHash, messageId, inReplyTo, references)
   }
   
   def findTime(time: String)(implicit fmt: DateTimeFormatter): Option[Long] = {
@@ -241,7 +271,12 @@ class SaveEmailActor extends Actor {
       case Some(b) => Some(b)
       case None => findBodies2(json) match {
         case Some(b2) => Some(b2)
-        case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "noMessageBody", new DateTime().getMillis, Map("json" -> pretty(render(json))))); None
+        case None => {
+          findBodies3(json) match {
+            case Some(b3) => Some(b3)
+            case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "noMessageBody", new DateTime().getMillis, Map("json" -> pretty(render(json))))); None
+          }
+        }
       }
     }
   }
@@ -252,16 +287,20 @@ class SaveEmailActor extends Actor {
       body <- payload.asInstanceOf[Map[String,Any]].get("body")
     } yield(body, payload)) match {
     case Some(m) => {
-      (for {
+      val text = (for {
         parts <- m._2.asInstanceOf[Map[String,Any]].get("parts")
         textMap <- parts.asInstanceOf[List[Map[String,Any]]].find(part => part.get("mimeType") == Some("text/plain"))
         text <- textMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
+      } yield(text))
+      
+      val html = (for {
+        parts <- m._2.asInstanceOf[Map[String,Any]].get("parts")
         htmlMap <- parts.asInstanceOf[List[Map[String,Any]]].find(part => part.get("mimeType") == Some("text/html"))
         html <- htmlMap.get("body").get.asInstanceOf[Map[String,Any]].get("data").map(_.toString)
-      } yield(text, html)) match {
-        case Some(b) => Some(Map("textBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._1)), "htmlBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b._2))))
-        case None => None
-      }
+      } yield(html))
+      
+      if(text.isDefined || html.isDefined) Some(Map("textBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(text.getOrElse(""))), "htmlBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(html.getOrElse("")))))
+      else None
     }
     case None => None
     }
@@ -288,6 +327,17 @@ class SaveEmailActor extends Actor {
       case None => None
     }
   }
+  
+  def findBodies3(json: JValue): Option[Map[String,String]] = {
+        (for {
+          payload <- json.values.asInstanceOf[Map[String,Any]].get("payload")
+          body <- payload.asInstanceOf[Map[String,Any]].get("body")
+          data <- body.asInstanceOf[Map[String,Any]].get("data")
+        } yield(data.toString)) match {
+          case Some(b) => Some(Map("textBody" -> StringUtils.newStringUtf8(Base64.decodeBase64(b))))
+          case None => None
+        }
+      }
   
   def md5Hash(str: String) = {
     val md = MessageDigest.getInstance("MD5")

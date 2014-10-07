@@ -76,11 +76,11 @@ class AccessTokenActor extends Actor {
         updatedEAs <- Future.sequence(emailAccounts.flatMap(x => x).map(refreshGmailAccessToken(_)))
       } yield {
         updatedEAs.map(acc => {
-            acc match {
-              case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
-              case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"$ex","errorType" -> "tokenRefreshFailure")))
-            }
-          })
+          acc match {
+            case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
+            case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"$ex","errorType" -> "tokenRefreshFailure")))
+          }
+        })
       }
     }
 

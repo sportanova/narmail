@@ -52,9 +52,12 @@ class SimpleClient() {
 
     session.execute(
     s"CREATE TABLE IF NOT EXISTS $keyspace.emails_by_topic (" +
-      "id text," +
+      "id text," + // gmail_id
       "user_id text," +
       "thread_id text," + // TODO: add account id?
+      "msg_id text," + // rpc2822 id
+      "reply_to text," + // rpc2822
+      "references text," + // rpc2822
       "recipients_hash text," +
       "recipients map<text,text>," +
       "ts bigint," +
@@ -72,6 +75,9 @@ class SimpleClient() {
       "id text," +
       "user_id text," +
       "thread_id text," + // TODO: add account id?
+      "msg_id text," + // rpc2822 id
+      "reply_to text," + // rpc2822
+      "references text," + // rpc2822
       "recipients_hash text," +
       "recipients map<text,text>," +
       "ts bigint," +
@@ -174,6 +180,7 @@ class SimpleClient() {
 //    Insert into user_events (user_id, event_type, ts, data) VALUES(f5183e19-d45e-4871-9bab-076c0cd2e422, 'userSignup', 1407961587000, {'userId':'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf'});
 //    update email_accounts set access_token = 'ya29.jgA2eVbmFNfqdgRh6_YL6W4yFZPl8YuHVWjCSrdGjcVc_PNS3b9Y8L7r' where user_id = 'bbe1131d-3be5-4997-a1ee-295f6f2c9dbf' AND id = 'c0cf3490-25a2-4071-a486-5e0e62247f8d';
     //     // UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "metaDataIssue", new DateTime().getMillis, Map("json" -> pretty(render(json)))))
+//    select count(*) from user_events where event_type = 'error' AND user_id = f5183e19-d45e-4871-9bab-076c0cd2e422;
   }
   
   def dropKeyspace(keyspace: String): Unit = {

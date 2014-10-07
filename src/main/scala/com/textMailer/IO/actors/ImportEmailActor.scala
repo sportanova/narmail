@@ -100,21 +100,29 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
               gmId <- e.data.get("gmailId")
             } yield gmId)) match {
               case Some(id) => { // recurring import
-                println(s"========================== last id $id")
-                val unwrittenMessages = ms.asInstanceOf[List[Map[String,String]]].takeWhile(messageInfo => messageInfo.get("id") != Some(id)).map(mInfo => mInfo.get("id")).filter(_.isDefined).map(_.get) // take elements until one equals the last imported email's id
+                val unwrittenMessageIds = ms.asInstanceOf[List[Map[String,String]]].takeWhile(messageInfo => messageInfo.get("id") != Some(id)).map(mInfo => mInfo.get("id")).filter(_.isDefined).map(_.get) // take elements until one equals the last imported email's id
                 
-                getEmailActor ! GetGmailMessages(unwrittenMessages, gmailUserId, accessToken, emailAddress, userId, emailAccountId) // filter the http response into a list of gmail message ids
-                println(s"############## unwrittenMessages.size ${unwrittenMessages.size}")
-                println(s"############## unwrittenMessages ${unwrittenMessages}")
+                getEmailActor ! GetGmailMessages(unwrittenMessageIds, gmailUserId, accessToken, emailAddress, userId, emailAccountId) // filter the http response into a list of gmail message ids
+                println(s"############## unwrittenMessages.size ${unwrittenMessageIds.size}")
+                println(s"############## unwrittenMessages ${unwrittenMessageIds}")
                 println(s"############## totalMessages ${ms.asInstanceOf[List[Map[String,String]]]}")
                 println(s"############## totalMessages.size ${ms.asInstanceOf[List[Map[String,String]]].size}")
                 
-                unwrittenMessages.headOption match {
+                unwrittenMessageIds.headOption match { // only write event if there's an unwritten message
                   case Some(id) => UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", new DateTime().getMillis, Map("gmailId" -> id)))
-                  case None => // no items in list
+                  case None => // no unwritten messages
                 }
               }
-              case None => ms.asInstanceOf[List[Map[String,String]]] //first time import
+              case None => { //first time import
+                val ids = ms.asInstanceOf[List[Map[String,String]]].map(mInfo => mInfo.get("id")).filter(_.isDefined).map(_.get)
+                println(s"@@@@@@@@@@ ids $ids")
+                getEmailActor ! GetGmailMessages(ids, gmailUserId, accessToken, emailAddress, userId, emailAccountId)
+                
+                ids.headOption match {
+                  case Some(id) => // UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", new DateTime().getMillis, Map("gmailId" -> id)))
+                  case None =>
+                }
+              }
             }
           })
         }
