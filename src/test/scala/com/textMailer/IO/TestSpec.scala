@@ -750,8 +750,8 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
         val results = findJsonObjects(json).map(j => {
 //          println(s"################ ${findMessageMetaData(j)}")
 //          val x = j.values.asInstanceOf[Map[String,Any]].get("id")
-          val x = getMessageBodies(j)
-          println(s"################ JSON 1 ${x}")
+//          val x = getMessageBodies(j)
+//          println(s"################ JSON 1 ${x}")
         })
     }
     
