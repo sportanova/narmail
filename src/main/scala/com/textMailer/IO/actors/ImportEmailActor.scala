@@ -118,7 +118,7 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
             }
           })
         }
-        case None => println(s"############ didn't find any messageids (access token probably expired)")
+        case None => println(s"############ didn't find any messageids for userId:$userId (access token probably expired)")
       }
     })
   }

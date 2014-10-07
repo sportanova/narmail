@@ -43,9 +43,6 @@ class AccessTokenActor extends Actor {
     case redirect: String => redirect
     case null => "http://localhost:8080/oauth/oauth2callback"
   }
-  
-  // TODO: make call to get gmail user_id
-  // https://www.googleapis.com/oauth2/v1/tokeninfo?id_token=
 
   def receive = {
     case AddGmailAccount(userId, accessCode) => {  // TODO: will spammers be able to POST /user endpoint and create users, unless we create user in first oAuth transaction? TLDR: Create user via endpoint or when adding first account
@@ -68,24 +65,22 @@ class AccessTokenActor extends Actor {
     case "recurringRefresh" => {
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
       
-      val emailAccountsFutures = UserEventIO().asyncFind(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ues => { // grab ids from user events, then get email accounts
-        ues.map(_.data.get("userId")).filter(_.isDefined).map(_.get).map(id => {
+      val emailAccountsFutures = UserEventIO().asyncFind(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).flatMap(ues => { // grab ids from user events, then get email accounts
+        Future.sequence(ues.map(_.data.get("userId")).filter(_.isDefined).map(_.get).map(id => {
           EmailAccountIO().asyncFind(List(Eq("user_id",id)), 10)
-        })
+        }))
       })
       
       for {
-        ues <- emailAccountsFutures
-        eas <- Future.sequence(ues)
+        emailAccounts <- emailAccountsFutures
+        updatedEAs <- Future.sequence(emailAccounts.flatMap(x => x).map(refreshGmailAccessToken(_)))
       } yield {
-        eas.flatMap(ea => ea).map(ea => {
-          refreshGmailAccessToken1(ea).map(acc => {
+        updatedEAs.map(acc => {
             acc match {
               case Success(s) => UserEventIO().write(UserEvent(java.util.UUID.fromString(s.userId), "refreshToken", new DateTime().getMillis, Map()))
-              case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"userId${ea.userId}","errorType" -> "tokenRefreshFailure")))
+              case Failure(ex) => UserEventIO().write(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "error", new DateTime().getMillis, Map("value" -> s"$ex","errorType" -> "tokenRefreshFailure")))
             }
           })
-        })
       }
     }
 
@@ -94,7 +89,7 @@ class AccessTokenActor extends Actor {
 
       (for {
         eas <- emailAccounts
-        refreshedEAs <- Future.sequence(eas.map(x => refreshGmailAccessToken1(x)))
+        refreshedEAs <- Future.sequence(eas.map(ea => refreshGmailAccessToken(ea)))
       } yield {
         refreshedEAs.map(acc => { acc match {
           case Success(a) => s"Successfully updated ${a.id} email account"
@@ -105,7 +100,7 @@ class AccessTokenActor extends Actor {
     case _ => sender ! "Error: Didn't match case in EmailActor"
   }
   
-  def refreshGmailAccessToken1(emailAccount: EmailAccount): Future[Try[EmailAccount]] = {
+  def refreshGmailAccessToken(emailAccount: EmailAccount): Future[Try[EmailAccount]] = {
     val refreshURL = new URL("https://accounts.google.com/o/oauth2/token")
     val req = POST(refreshURL).addHeaders(("Content-Type", "application/x-www-form-urlencoded"))
       .addBody(s"client_id=${URLEncoder.encode("909952895511-tnpddhu4dc0ju1ufbevtrp9qt2b4s8d6.apps.googleusercontent.com", "UTF-8")}&client_secret=${URLEncoder.encode("qaCfjCbleg8GpHVeZXljeXT0", "UTF-8")}&grant_type=refresh_token&refresh_token=${emailAccount.refreshToken}")
