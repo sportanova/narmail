@@ -37,8 +37,10 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   }
   
   post("/send/:emailAccountId") {
+    println(s"@@@@@@@@@@@ getting here")
     Try{parsedBody.extract[Email]} match {
       case Success(email) => {
+        println(s"@@@@@@@@@@@ email $email")
         params.get("emailAccountId") match {
           case Some(eaId) => {
             val result = emailActor ! SendMail(email, eaId) // TODO: return Try, rather than unit
@@ -47,7 +49,7 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
           case None => // no email account id provided
         }
       }
-      case Failure(ex) => // TODO - return message about email not properly formed
+      case Failure(ex) => println(s"@@@@@@@ email not properly formed $ex")// TODO - return message about email not properly formed
     }
   }
 }

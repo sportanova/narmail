@@ -46,25 +46,27 @@ object SendEmail {
 
   def send(email: Email, gmailUserId: String, accessToken: String): Unit = {
     val body = createSendHTTPBody(email)
-    val url = new URL(s"https://www.googleapis.com/upload/gmail/v1/users/$gmailUserId/messages/send?uploadType=multipart") // 100030981325891290860
-    val req = POST(url).addHeaders(("authorization", s"Bearer $accessToken"), ("Content-Type", "multipart/related; boundary=narmal_send")).addBody(body)
-    req.apply.map(res => {
-      val resMap = res.toJValue.values.asInstanceOf[Map[String,Any]]
-      val id = resMap.get("id")
-      val threadId = resMap.get("threadId")
-      
-      (for {
-        id <- resMap.get("id")
-        threadId <- resMap.get("threadId")
-      } yield (id, threadId)) match {
-        case Some(ids) => {
-          val updatedEmail = email.copy(id = ids._1.toString, threadId = Some(ids._2.toString))
-          EmailConversationIO().asyncWrite(updatedEmail)
-          EmailTopicIO().asyncWrite(updatedEmail)
-        }
-        case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "messageFailedToSend", new DateTime().getMillis, Map("gmailUserId" -> gmailUserId, "email" -> compact(render(decompose(email))), "errorType" -> "payloadNotFound")))
-      }
-    })
+    println(s"@@@@@@@@@@@ body $body")
+//    val url = new URL(s"https://www.googleapis.com/upload/gmail/v1/users/$gmailUserId/messages/send?uploadType=multipart") // 100030981325891290860
+//    val req = POST(url).addHeaders(("authorization", s"Bearer $accessToken"), ("Content-Type", "multipart/related; boundary=narmal_send")).addBody(body)
+//    req.apply.map(res => {
+//      val resMap = res.toJValue.values.asInstanceOf[Map[String,Any]]
+//      val id = resMap.get("id")
+//      val threadId = resMap.get("threadId")
+//      
+//      (for {
+//        id <- resMap.get("id")
+//        threadId <- resMap.get("threadId")
+//      } yield (id, threadId)) match {
+//        case Some(ids) => {
+//          // TODO: Create conversation + topics
+//          val updatedEmail = email.copy(id = ids._1.toString, threadId = Some(ids._2.toString))
+//          EmailConversationIO().asyncWrite(updatedEmail)
+//          EmailTopicIO().asyncWrite(updatedEmail)
+//        }
+//        case None => UserEventIO().asyncWrite(UserEvent(java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422"), "messageFailedToSend", new DateTime().getMillis, Map("gmailUserId" -> gmailUserId, "email" -> compact(render(decompose(email))), "errorType" -> "payloadNotFound")))
+//      }
+//    })
   }
   
   def createSendHTTPBody(email: Email): String = {
@@ -74,7 +76,8 @@ object SendEmail {
     val rawEmail = createRawMessage(email)
     val headers = createHeaders(email)
     val payload = Map("headers" -> headers, "mimeType" -> "text/plain")
-    val json = compact(render(decompose(Map("raw" -> rawEmail, "payload" -> payload))))
+    val jsonMap = Map("raw" -> Some(rawEmail), "payload" -> Some(payload), "threadId" -> email.threadId).filter{case (k,v) => v.isDefined}.map{case (k,v) => (k,v.get)}
+    val json = compact(render(decompose(jsonMap)))
     
     start + json + end
   }
