@@ -105,7 +105,6 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
                 getEmailActor ! GetGmailMessages(unwrittenMessageIds, gmailUserId, accessToken, emailAddress, userId, emailAccountId) // filter the http response into a list of gmail message ids
                 println(s"############## unwrittenMessages.size ${unwrittenMessageIds.size}")
                 println(s"############## unwrittenMessages ${unwrittenMessageIds}")
-                println(s"############## totalMessages ${ms.asInstanceOf[List[Map[String,String]]]}")
                 println(s"############## totalMessages.size ${ms.asInstanceOf[List[Map[String,String]]].size}")
                 
                 unwrittenMessageIds.headOption match { // only write event if there's an unwritten message
@@ -118,8 +117,8 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
                 println(s"@@@@@@@@@@ ids $ids")
                 getEmailActor ! GetGmailMessages(ids, gmailUserId, accessToken, emailAddress, userId, emailAccountId)
                 
-                ids.headOption match {
-                  case Some(id) => // UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", new DateTime().getMillis, Map("gmailId" -> id)))
+                ids.headOption match { // save last email id, so we don't keep importing the same emails
+                  case Some(id) => UserEventIO().write(UserEvent(java.util.UUID.fromString(userId), "importEmail", new DateTime().getMillis, Map("gmailId" -> id)))
                   case None =>
                 }
               }

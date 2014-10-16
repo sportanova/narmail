@@ -22,7 +22,7 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   protected implicit def executor: ExecutionContext = system.dispatcher
 
   import _root_.akka.pattern.ask
-  implicit val defaultTimeout = Timeout(5000)
+  implicit val defaultTimeout = Timeout(10000)
   
   before() {
     contentType = formats("json")

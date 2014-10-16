@@ -64,6 +64,7 @@ class AccessTokenActor extends Actor {
     }
     case "recurringRefresh" => {
       val fake_uuid = java.util.UUID.fromString("f5183e19-d45e-4871-9bab-076c0cd2e422") // used as signup for all users - need better way to do this
+      println(s"@@@@@@@@@@@@ recurring")
       
       val emailAccountsFutures = UserEventIO().asyncFind(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).flatMap(ues => { // grab ids from user events, then get email accounts
         Future.sequence(ues.map(_.data.get("userId")).filter(_.isDefined).map(_.get).map(id => {
