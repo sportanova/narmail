@@ -22,6 +22,15 @@ import java.io.ByteArrayOutputStream
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 import net.liftweb.json.Extraction._
+import java.net.URL
+import com.stackmob.newman.{ETagAwareHttpClient, ApacheHttpClient}
+import com.stackmob.newman._
+import com.stackmob.newman.caching.InMemoryHttpResponseCacher
+import com.stackmob.newman.dsl._
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import com.stackmob.newman.response.HttpResponse
 
 class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
   PrepareData()
@@ -863,9 +872,16 @@ class TestSpec extends MutableScalatraSpec { // specs.prepare.IO.TestSpec
        
 //     println(s"########## json $json")
 
-      val email1 = Email("123l", "someUserId", Some("4535335l"), "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
+//      val email1 = Email("123l", "someUserId", Some("4535335l"), "recipients", Some(Map("Stephen Portanova" -> "sportano@gmail.com")), 234243l, "subject", Map("Stephen Portanova" -> "sportano@gmail.com"), "cc","bcc","body", "emailBodyHtml", "msgId")
 //      SendEmail.send(email1, "100030981325891290860", "ya29.lgBv-SEWcPypOGICGQPvciXqIwwAP8n0w2eHRZj-oQlXS_8Y7LWOl5ts")
-      
+       implicit val httpClient = new ApacheHttpClient       
+       val url = new URL("https://www.googleapis.com/gmail/v1/users/100030981325891290860/labels?userId=me")
+//       val req = GET(url).addHeaders(("Authorization", "Bearer ya29.oQCbSEm5zSKffrZxOW9CoOCYdY225WpmHIwtCtJ4fnK8kYHp843Ep3VI")).apply
+//       req.map(res => {
+//         val x = res.toJValue.values
+//         println(s"@@@@@@@@@@@@ x $x")
+//       })
+      "" == ""
 //       https://www.googleapis.com/upload/gmail/v1/users/userId/messages/send
     }
   }

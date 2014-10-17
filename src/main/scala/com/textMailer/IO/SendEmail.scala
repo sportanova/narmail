@@ -45,10 +45,13 @@ object SendEmail {
   implicit val httpClient = new ApacheHttpClient
 
   def send(email: Email, gmailUserId: String, accessToken: String): Unit = {
-    val body = createSendHTTPBody(email)
+    val currentTime = new DateTime
+    // TODO: change fetching for list of messages to only fetch from 'inbox' label - store inbox label
+    val body = createSendHTTPBody(email, currentTime)
     val url = new URL(s"https://www.googleapis.com/upload/gmail/v1/users/$gmailUserId/messages/send?uploadType=multipart") // 100030981325891290860
     val req = POST(url).addHeaders(("authorization", s"Bearer $accessToken"), ("Content-Type", "multipart/related; boundary=narmal_send")).addBody(body)
     req.apply.map(res => {
+      println(s"!!!!!! stuff ${res.toJValue.values}")
       val body = JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]]
 
       (for {
@@ -57,7 +60,7 @@ object SendEmail {
       } yield (id, threadId)) match {
         case Some(ids) => {
           // TODO: Create conversation + topics
-          val updatedEmail = email.copy(id = ids._1.toString, threadId = Some(ids._2.toString))
+          val updatedEmail = email.copy(id = ids._1.toString, threadId = Some(ids._2.toString), ts = currentTime.getMillis)
           EmailConversationIO().asyncWrite(updatedEmail)
           EmailTopicIO().asyncWrite(updatedEmail)
         }
@@ -66,11 +69,11 @@ object SendEmail {
     })
   }
   
-  def createSendHTTPBody(email: Email): String = {
+  def createSendHTTPBody(email: Email, currentTime: DateTime): String = {
     val start = "--narmal_send\nContent-Type: application/json; charset=UTF-8\n\n"
     val end = "\n\n--narmal_send\nContent-Type: message/rfc822\n\n--narmal_send--"
 
-    val rawEmail = createRawMessage(email)
+    val rawEmail = createRawMessage(email, currentTime)
     val headers = createHeaders(email)
     val payload = Map("headers" -> headers, "mimeType" -> "text/plain")
     val jsonMap = Map("raw" -> Some(rawEmail), "payload" -> Some(payload), "threadId" -> email.threadId).filter{case (k,v) => v.isDefined}.map{case (k,v) => (k,v.get)}
@@ -108,13 +111,13 @@ object SendEmail {
     List(Some(to), Some(from), Some(subject), inReplyTo, reference).filter(_.isDefined).map(_.get)
   }
 
-  def createRawMessage(email: Email): String = {
+  def createRawMessage(email: Email, currentTime: DateTime): String = {
     val fmt = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss Z")
 
     val from = s"From: ${formatRawMessageRecipients(email.sender)}\n"
     val to = s"To: ${formatRawMessageRecipients(email.recipients.get)}\n"
     val subject = "Subject: " + email.subject + "\n"
-    val date = "Date: " + fmt.print(new DateTime(email.ts)) + "\n\n"
+    val date = "Date: " + fmt.print(currentTime) + "\n\n"
     val message = email.textBody
     
     Base64.encodeBase64URLSafeString((from + to + subject + date + message).getBytes)

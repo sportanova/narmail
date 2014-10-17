@@ -89,9 +89,9 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
   def importGmailHTTP(gmailUserId: String, emailAddress: String, accessToken: String, emailAccountId: String, userId: String, count: Int): Unit = { // if number of new messages is > count, will miss those messages
     val lastImportedEmailIdFuture = UserEventIO().asyncFind(List(Eq("user_id", java.util.UUID.fromString(userId)), Eq("event_type", "importEmail")), 1)
 
-    val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=$count")
-    val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken"))
-    val messageListRes = messageListReq.apply.map(res => {
+    val messageListUrl = new URL(s"https://www.googleapis.com/gmail/v1/users/$gmailUserId/messages?maxResults=$count&labelIds=INBOX")
+    val messageListReq = GET(messageListUrl).addHeaders(("authorization", s"Bearer $accessToken")).apply
+    val messageListRes = messageListReq.map(res => {
       JsonParser.parse(res.toJValue.values.asInstanceOf[Map[String,Any]].get("body").get.toString).values.asInstanceOf[Map[String,Any]].get("messages") match {
         case Some(ms) => {
           lastImportedEmailIdFuture.map(events => { // unwrap future
