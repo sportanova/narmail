@@ -35,7 +35,10 @@ class ScalatraBootstrap extends LifeCycle {
     
     implicit val execContext = system.dispatcher
     system.scheduler.schedule(Duration.Zero, Duration.create(60000, TimeUnit.MILLISECONDS), importEmailActor, "recurringImport");
-//    system.scheduler.schedule(Duration.Zero, Duration.create(3600000, TimeUnit.MILLISECONDS), accessTokenActor, "recurringRefresh")
+    val environment = System.getProperty("environment_location") match {
+      case prod: String => println(s"access token refresh enabled"); system.scheduler.schedule(Duration.Zero, Duration.create(3600000, TimeUnit.MILLISECONDS), accessTokenActor, "recurringRefresh")
+      case null => println(s"access token refresh disabled")
+    }
 
     context.mount(new TextMailerServlet, "/*")
     context.mount(new OAuthRoutes(system, accessTokenActor), "/oauth")
