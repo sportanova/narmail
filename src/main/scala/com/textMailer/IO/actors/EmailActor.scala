@@ -36,7 +36,7 @@ class EmailActor extends Actor {
 
     case SendMail(email, emailAccountId) => {
       val result = EmailAccountIO().asyncFind(List(Eq("id",emailAccountId), Eq("user_id",email.userId)), 1).map(ea => ea.headOption match {
-        case Some(acc) => SendEmail.send(email, "100030981325891290860", acc.accessToken) // TODO: return TRY
+        case Some(acc) => SendEmail.send(email, acc.id, acc.accessToken) // TODO: return TRY
         case None => // TODO: return TRY - failure due to no email account
       })
       

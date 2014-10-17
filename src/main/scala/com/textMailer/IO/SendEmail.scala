@@ -46,7 +46,6 @@ object SendEmail {
 
   def send(email: Email, gmailUserId: String, accessToken: String): Unit = {
     val currentTime = new DateTime
-    // TODO: change fetching for list of messages to only fetch from 'inbox' label - store inbox label
     val body = createSendHTTPBody(email, currentTime)
     val url = new URL(s"https://www.googleapis.com/upload/gmail/v1/users/$gmailUserId/messages/send?uploadType=multipart") // 100030981325891290860
     val req = POST(url).addHeaders(("authorization", s"Bearer $accessToken"), ("Content-Type", "multipart/related; boundary=narmal_send")).addBody(body)
@@ -83,7 +82,7 @@ object SendEmail {
   }
   
   def createHeaders(email: Email): List[Map[String,String]] = {
-    val formattedTo = email.recipients.get.foldLeft("")((acc, recipient) => {
+    val formattedTo = email.recipients.get.foldLeft("")((acc, recipient) => { // combine recipients, add comma, remove final trailing comma
       acc + " " + recipient._1 + " " + recipient._2 + ","
     }) match {
       case x => x.slice(0, x.length - 1)

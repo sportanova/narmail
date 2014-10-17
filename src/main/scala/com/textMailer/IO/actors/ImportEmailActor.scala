@@ -67,14 +67,14 @@ class ImportEmailActor extends Actor { // TODO: make this actor into it's own se
       (for {
         userId <- UserEventIO().find(List(Eq("user_id", fake_uuid), Eq("event_type", "userSignup")), 1000).map(ue => ue.data.get("userId")).filter(_.isDefined).map(_.get)
         emailAccount <- EmailAccountIO().find(List(Eq("user_id",userId)), 10)
-      } yield(emailAccount)).map(ea => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 40))
+      } yield (emailAccount)).map(ea => importGmailHTTP(ea.id, ea.username, ea.accessToken, ea.id, ea.userId, 40))
     }
     case ImportEmail(userId) => {
       val emailAccounts = userId match {
         case Some(userId) => {
           EmailAccountIO().find(List(Eq("user_id",userId)), 10).map(ea => {
             ea.provider match {
-              case "gmail" => importGmailHTTP("100030981325891290860", ea.username, ea.accessToken, ea.id, ea.userId, 100)
+              case "gmail" => importGmailHTTP(ea.id, ea.username, ea.accessToken, ea.id, ea.userId, 100)
               case _ =>
             }
          })

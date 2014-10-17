@@ -37,14 +37,11 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   }
   
   post("/send/:emailAccountId") {
-    println(s"@@@@@@@@@@@ getting here")
     Try{parsedBody.extract[Email]} match {
       case Success(email) => {
-        println(s"@@@@@@@@@@@ email $email")
         params.get("emailAccountId") match {
           case Some(eaId) => {
             val result = emailActor ! SendMail(email, eaId) // TODO: return Try, rather than unit
-                    //    new AsyncResult { val is = result }
           }
           case None => // no email account id provided
         }
