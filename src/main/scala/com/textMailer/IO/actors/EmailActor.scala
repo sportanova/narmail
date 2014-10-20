@@ -10,9 +10,11 @@ import com.textMailer.IO.EmailAccountIO
 import scala.util.Success
 import scala.util.Failure
 import com.textMailer.IO.EmailTopicIO
+import com.textMailer.IO.CassandraClause
+import com.textMailer.IO.Lt
 
 object EmailActor {
-  case class GetEmailsForTopic(userId: Option[String], threadId: Option[String])
+  case class GetEmailsForTopic(userId: Option[String], threadId: Option[String], ts: Option[String])
   case class SendMail(email: Email, emailAccountId: String)
 }
 
@@ -22,12 +24,19 @@ class EmailActor extends Actor {
   import akka.pattern.pipe
 
   def receive = {
-    case GetEmailsForTopic(userId, threadId) => {
+    case GetEmailsForTopic(userId, threadId, ts) => {
       val emails =  (for {
         uid <- userId
         tid <- threadId
       } yield(uid, tid)) match {
-        case Some(ids) => EmailTopicIO().asyncFind(List(Eq("user_id", ids._1), Eq("thread_id", ids._2)), 40)
+        case Some(ids) => {
+          val clauses: List[CassandraClause] = ((ts match {
+            case Some(t) => Some(Lt("ts", t))
+            case None => None
+          }) :: Some(Eq("user_id",ids._1)) :: Some(Eq("thread_id", ids._2)) :: Nil).filter(_.isDefined).map(_.get)
+
+          EmailTopicIO().asyncFind(clauses, 40)
+        }
         case None => Future(List())
       }
 

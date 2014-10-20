@@ -31,8 +31,9 @@ class EmailRoutes(system: ActorSystem, emailActor: ActorRef) extends ScalatraSer
   get("/:userId/:threadId") {
     val userId = params.get("userId")
     val threadId = params.get("threadId")
+    val ts = params.get("ts")
 
-    val emails = emailActor ? GetEmailsForTopic(userId, threadId)
+    val emails = emailActor ? GetEmailsForTopic(userId, threadId, ts)
     new AsyncResult { val is = emails }
   }
   

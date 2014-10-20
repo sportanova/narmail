@@ -88,7 +88,7 @@ object SendEmail {
       case x => x.slice(0, x.length - 1)
     }
     val to = Map("name" -> "to", "value" -> formattedTo)
-    
+
     val inReplyTo = email.inReplyTo match {
       case Some(r) => Some(Map("name" -> "In-Reply-To", "value" -> r))
       case None => None
