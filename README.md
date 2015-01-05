@@ -1,13 +1,4 @@
 
 # narmail #
 
-## Build & Run ##
-
-```sh
-$ cd textMailer
-$ ./sbt
-> container:start
-> browse
-```
-
-If `browse` doesn't launch your browser, manually open [http://localhost:8080/](http://localhost:8080/) in your browser.
+Scala + Akka + Cassandra backend for iOS app that makes emailing more like texting (whatsapp for emailing)
